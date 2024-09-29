@@ -3,7 +3,7 @@ name: Deploy Node.js App
 on:
   push:
     branches:
-      - main # Укажите ветку, которую вы используете для развертывания
+      - master # Укажите ветку, которую вы используете для развертывания
 
 jobs:
   deploy:
@@ -32,17 +32,17 @@ jobs:
           printf "%s" "$SSH_PRIVATE_KEY" > private_key.pem
           chmod 600 private_key.pem
           ssh -i private_key.pem -o StrictHostKeyChecking=no root@81.29.136.136 << 'EOF'
-            sudo mkdir -p /var/www/my-app
-            sudo chown $USER:$USER /var/www/my-app
-            cd /var/www/my-app
+            sudo mkdir -p /var/www/my-app2
+            sudo chown $USER:$USER /var/www/my-app2
+            cd /var/www/my-app2
             if [ ! -d ".git" ]; then
               git init
-              git remote add origin https://github.com/Khamzeto/ParfumeBackend.git
+              git remote add origin https://github.com/Khamzeto/Parfume-Backend-v2.git
             fi
             git pull origin main
             npm install
             npm run build
-            pm2 start dist/app.js --name my-app || pm2 restart my-app
+            pm2 start dist/app.js --name my-app2 || pm2 restart my-app2
             pm2 save
             pm2 startup
           EOF
