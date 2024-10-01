@@ -8,7 +8,8 @@ import {
   updateNote,      // Импортируем функцию обновления ноты
   deleteNote,       // Импортируем функцию удаления ноты
   getNoteById,
-  addNote
+  addNote,
+  replaceNote
 } from '../controllers/noteController';
 
 const router = Router();
@@ -22,7 +23,7 @@ router.get('/:noteId', getNoteById);     // Маршрут для получен
 router.post('/', addNote); 
 
 // Добавляем маршруты для обновления и удаления нот
-router.put('/:noteId', updateNote);  // Маршрут для обновления ноты (PUT запрос)
+router.post('/replace/:noteId', replaceNote); // Маршрут для обновления ноты (PUT запрос)
 router.delete('/:noteId', deleteNote); // Маршрут для удаления ноты (DELETE запрос)
 
 export default router;

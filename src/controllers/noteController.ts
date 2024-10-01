@@ -227,75 +227,67 @@ export const getNotesByInitial = async (req: Request, res: Response): Promise<vo
   };
   
   // Функция для обновления ноты
-  export const updateNote = async (req: Request, res: Response): Promise<void> => {
+  export const replaceNote = async (req: Request, res: Response): Promise<void> => {
     const { noteId } = req.params;
-    const { newName, newImage } = req.body; // Новое имя и изображение для ноты
+    const { newName, newImage } = req.body; // Данные для новой ноты
   
     try {
-      // Логируем запрос для проверки приходящих данных
-      console.log('Request body:', req.body);
+      // Удаляем старую ноту по ID
+      const deletedNote = await noteModel.findByIdAndDelete(noteId);
   
-      // Находим старую ноту
-      const oldNote = await noteModel.findById(noteId);
-  
-      if (!oldNote) {
-        res.status(404).json({ message: 'Note not found' });
+      if (!deletedNote) {
+        res.status(404).json({ message: 'Note not found for deletion' });
         return;
       }
   
-      const oldNoteName = oldNote.name;
+      // Логируем удаленную ноту для проверки
+      console.log(`Deleted note: ${deletedNote.name}`);
   
-      // Обновляем только те поля, которые были переданы
-      if (newName && newName.trim() !== "") {
-        oldNote.name = newName;
-      }
+      // Создаем новую ноту с переданными данными
+      const newNote = new noteModel({
+        name: newName,
+        image: newImage || '', // Устанавливаем пустую строку, если image не передан
+      });
   
-      // Обновляем поле image, если оно передано и не является undefined
-      if (newImage !== undefined && newImage.trim() !== "") {
-        oldNote.image = newImage;
-      }
+      const savedNote = await newNote.save();
   
-      // Сохраняем обновленную ноту
-      const updatedNote = await oldNote.save();
+      // Логируем новую ноту для проверки
+      console.log('Created new note:', savedNote);
   
-      // Логируем обновленную ноту для проверки
-      console.log('Updated note:', updatedNote);
-  
-      // Обновляем имя ноты в парфюмах, если имя изменилось
-      if (newName && oldNoteName !== newName) {
-        await perfumeModel.updateMany(
-          {
-            $or: [
-              { 'notes.top_notes': oldNoteName },
-              { 'notes.heart_notes': oldNoteName },
-              { 'notes.base_notes': oldNoteName },
-              { 'notes.additional_notes': oldNoteName },
-            ],
+      // Обновляем все парфюмы, которые содержат старую ноту
+      await perfumeModel.updateMany(
+        {
+          $or: [
+            { 'notes.top_notes': deletedNote.name },
+            { 'notes.heart_notes': deletedNote.name },
+            { 'notes.base_notes': deletedNote.name },
+            { 'notes.additional_notes': deletedNote.name },
+          ],
+        },
+        {
+          $set: {
+            'notes.$[top]': newName,
+            'notes.$[heart]': newName,
+            'notes.$[base]': newName,
+            'notes.$[additional]': newName,
           },
-          {
-            $set: {
-              'notes.$[top]': newName,
-              'notes.$[heart]': newName,
-              'notes.$[base]': newName,
-              'notes.$[additional]': newName,
-            },
-          },
-          {
-            arrayFilters: [
-              { 'top': oldNoteName },
-              { 'heart': oldNoteName },
-              { 'base': oldNoteName },
-              { 'additional': oldNoteName },
-            ],
-          }
-        );
-      }
+        },
+        {
+          arrayFilters: [
+            { 'top': deletedNote.name },
+            { 'heart': deletedNote.name },
+            { 'base': deletedNote.name },
+            { 'additional': deletedNote.name },
+          ],
+        }
+      );
   
-      res.status(200).json({ message: `Note '${oldNoteName}' updated successfully`, updatedNote });
+      res.status(200).json({ message: `Note '${deletedNote.name}' replaced with '${newName}' successfully`, savedNote });
     } catch (err) {
-      res.status(500).json({ message: 'Failed to update note', error: err });
+      res.status(500).json({ message: 'Failed to replace note', error: err });
     }
   };
+  
   
   
   export const getNoteById = async (req: Request, res: Response): Promise<void> => {
