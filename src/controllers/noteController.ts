@@ -230,63 +230,70 @@ export const getNotesByInitial = async (req: Request, res: Response): Promise<vo
   export const replaceNote = async (req: Request, res: Response): Promise<void> => {
     const { noteId } = req.params;
     const { newName, newImage } = req.body; // Данные для новой ноты
-  
+
     try {
-      // Удаляем старую ноту по ID
-      const deletedNote = await noteModel.findByIdAndDelete(noteId);
-  
-      if (!deletedNote) {
-        res.status(404).json({ message: 'Note not found for deletion' });
-        return;
-      }
-  
-      // Логируем удаленную ноту для проверки
-      console.log(`Deleted note: ${deletedNote.name}`);
-  
-      // Создаем новую ноту с переданными данными
-      const newNote = new noteModel({
-        name: newName,
-        image: newImage || '', // Устанавливаем пустую строку, если image не передан
-      });
-  
-      const savedNote = await newNote.save();
-  
-      // Логируем новую ноту для проверки
-      console.log('Created new note:', savedNote);
-  
-      // Обновляем все парфюмы, которые содержат старую ноту
-      await perfumeModel.updateMany(
-        {
-          $or: [
-            { 'notes.top_notes': deletedNote.name },
-            { 'notes.heart_notes': deletedNote.name },
-            { 'notes.base_notes': deletedNote.name },
-            { 'notes.additional_notes': deletedNote.name },
-          ],
-        },
-        {
-          $set: {
-            'notes.$[top]': newName,
-            'notes.$[heart]': newName,
-            'notes.$[base]': newName,
-            'notes.$[additional]': newName,
-          },
-        },
-        {
-          arrayFilters: [
-            { 'top': deletedNote.name },
-            { 'heart': deletedNote.name },
-            { 'base': deletedNote.name },
-            { 'additional': deletedNote.name },
-          ],
+        // Удаляем старую ноту по ID
+        const deletedNote = await noteModel.findByIdAndDelete(noteId);
+
+        if (!deletedNote) {
+            res.status(404).json({ message: 'Note not found for deletion' });
+            return;
         }
-      );
-  
-      res.status(200).json({ message: `Note '${deletedNote.name}' replaced with '${newName}' successfully`, savedNote });
+
+        // Логируем удаленную ноту для проверки
+        console.log(`Deleted note: ${deletedNote.name}`);
+
+        // Создаем новую ноту с переданными данными
+        const newNote = new noteModel({
+            name: newName,
+            image: newImage || '', // Устанавливаем пустую строку, если image не передан
+        });
+
+        const savedNote = await newNote.save();
+
+        // Логируем новую ноту для проверки
+        console.log('Created new note:', savedNote);
+
+        // Обновляем все парфюмы, которые содержат старую ноту
+        const updateResult = await perfumeModel.updateMany(
+            {
+                $or: [
+                    { 'notes.top_notes': deletedNote.name },
+                    { 'notes.heart_notes': deletedNote.name },
+                    { 'notes.base_notes': deletedNote.name },
+                    { 'notes.additional_notes': deletedNote.name },
+                ],
+            },
+            {
+                $set: {
+                    'notes.$[top]': newName,
+                    'notes.$[heart]': newName,
+                    'notes.$[base]': newName,
+                    'notes.$[additional]': newName,
+                },
+            },
+            {
+                arrayFilters: [
+                    { 'top': deletedNote.name },
+                    { 'heart': deletedNote.name },
+                    { 'base': deletedNote.name },
+                    { 'additional': deletedNote.name },
+                ],
+            }
+        );
+
+        // Логируем результат обновления
+        console.log('Perfume update result:', updateResult);
+
+        res.status(200).json({
+            message: `Note '${deletedNote.name}' replaced with '${newName}' successfully`,
+            savedNote,
+        });
     } catch (err) {
-      res.status(500).json({ message: 'Failed to replace note', error: err });
+        console.error('Error during note replacement:', err); // Логирование ошибки на сервере
+        res.status(500).json({ message: 'Failed to replace note', error: err });
     }
-  };
+};
   
   
   
