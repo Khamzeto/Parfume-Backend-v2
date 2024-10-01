@@ -14,7 +14,7 @@ const PORT = 3001;
 connectDB();
 
 // Список разрешенных источников
-const allowedOrigins = ['http://localhost:3000', 'http://172.20.10.2:3000', 'http://172.20.10.5:3000', 'http://81.29.136.136:3000'];
+const allowedOrigins = ['http://localhost:3000','http://localhost:3001', 'http://172.20.10.2:3000', 'http://172.20.10.5:3000', 'http://172.20.10.2:3001', 'http://172.20.10.5:3001', 'http://81.29.136.136:3000'];
 
 // Настройка CORS с проверкой источника
 app.use(cors({
