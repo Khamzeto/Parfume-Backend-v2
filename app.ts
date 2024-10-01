@@ -8,7 +8,7 @@ import noteRoutes from './src/routes/noteRoutes';
 import cors from 'cors'; 
 
 const app: Application = express();
-const PORT = 3003;
+const PORT = 3001;
 
 // Подключение к MongoDB
 connectDB();

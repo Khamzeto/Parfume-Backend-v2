@@ -286,3 +286,43 @@ export const getNotesByInitial = async (req: Request, res: Response): Promise<vo
       res.status(500).json({ message: 'Failed to update note', error: err });
     }
   };
+  export const getNoteById = async (req: Request, res: Response): Promise<void> => {
+    const { noteId } = req.params;
+  
+    try {
+      const note = await noteModel.findById(noteId);
+      
+      if (!note) {
+        res.status(404).json({ message: 'Note not found' });
+        return;
+      }
+  
+      res.status(200).json(note);
+    } catch (err) {
+      res.status(500).json({ message: 'Failed to get note', error: err });
+    }
+  };
+  
+  // Функция для добавления новой ноты
+  export const addNote = async (req: Request, res: Response): Promise<void> => {
+    const { name, image } = req.body;
+  
+    try {
+      const existingNote = await noteModel.findOne({ name });
+  
+      if (existingNote) {
+        res.status(400).json({ message: 'Note with this name already exists' });
+        return;
+      }
+  
+      const newNote = new noteModel({
+        name,
+        image,
+      });
+  
+      await newNote.save();
+      res.status(201).json({ message: 'Note successfully added', note: newNote });
+    } catch (err) {
+      res.status(500).json({ message: 'Failed to add note', error: err });
+    }
+  };
