@@ -228,29 +228,31 @@ export const getNotesByInitial = async (req: Request, res: Response): Promise<vo
   
   // Функция для обновления ноты
   export const updateNote = async (req: Request, res: Response): Promise<void> => {
-    const { noteId } = req.params;
-    const { newName, newImage } = req.body; // Новые данные для обновления
+    const { noteId } = req.params;  // Получаем ID ноты из параметров
+    const { newName, newImage } = req.body;  // Получаем новые данные из тела запроса
 
     try {
-        // Находим ноту по ID
+        // Находим ноту по её ID
         const existingNote = await noteModel.findById(noteId);
 
         if (!existingNote) {
-            res.status(404).json({ message: 'Note not found' });
+            res.status(404).json({ message: 'Нота не найдена' });
             return;
         }
 
-        const oldName = existingNote.name; // Старое название для обновления в парфюмах
+        const oldName = existingNote.name;  // Сохраняем старое название ноты
 
-        // Обновляем поля ноты, если они переданы
+        // Обновляем название и изображение, если новые данные переданы
         existingNote.name = newName || existingNote.name;
         existingNote.image = newImage || existingNote.image;
 
         // Сохраняем обновлённую ноту
         const updatedNote = await existingNote.save();
 
-        // Если название ноты изменилось, обновляем его в парфюмах
+        // Если название изменилось, обновляем его в коллекции духов
         if (oldName !== newName) {
+            console.log('Обновляем ноты в парфюмах с', oldName, 'на', newName);
+
             const updateResult = await perfumeModel.updateMany(
                 {
                     $or: [
@@ -262,33 +264,36 @@ export const getNotesByInitial = async (req: Request, res: Response): Promise<vo
                 },
                 {
                     $set: {
-                        'notes.$[top]': newName,
-                        'notes.$[heart]': newName,
-                        'notes.$[base]': newName,
-                        'notes.$[additional]': newName,
+                        'notes.top_notes.$[topElem]': newName,
+                        'notes.heart_notes.$[heartElem]': newName,
+                        'notes.base_notes.$[baseElem]': newName,
+                        'notes.additional_notes.$[additionalElem]': newName,
                     },
                 },
                 {
                     arrayFilters: [
-                        { 'top': oldName },
-                        { 'heart': oldName },
-                        { 'base': oldName },
-                        { 'additional': oldName },
+                        { 'topElem': oldName },
+                        { 'heartElem': oldName },
+                        { 'baseElem': oldName },
+                        { 'additionalElem': oldName },
                     ],
                 }
             );
-            console.log('Perfume update result:', updateResult);
+
+            console.log('Результат обновления парфюмов:', updateResult);
         }
 
+        // Возвращаем успешный ответ
         res.status(200).json({
-            message: `Note '${oldName}' updated successfully to '${newName}'`,
+            message: `Нота '${oldName}' успешно обновлена на '${newName}'`,
             updatedNote,
         });
     } catch (err) {
-        console.error('Error during note update:', err);
-        res.status(500).json({ message: 'Failed to update note', error: err });
+        console.error('Ошибка при обновлении ноты:', err);
+        res.status(500).json({ message: 'Не удалось обновить ноту', error: err });
     }
 };
+
   
   
   
