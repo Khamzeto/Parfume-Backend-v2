@@ -242,13 +242,14 @@ export const getNotesByInitial = async (req: Request, res: Response): Promise<vo
   
       const oldNoteName = oldNote.name;
   
-      // Обновляем ноту (имя и/или изображение)
+      // Обновляем только те поля, которые были переданы
       if (newName) {
         oldNote.name = newName;
       }
-      if (newImage) {
-        oldNote.image = newImage; // Обновляем поле image
+      if (newImage !== undefined) { // Обновляем поле image, только если оно было передано в запросе
+        oldNote.image = newImage;
       }
+  
       await oldNote.save();
   
       // Обновляем имя ноты в парфюмах, если имя изменилось
@@ -286,6 +287,7 @@ export const getNotesByInitial = async (req: Request, res: Response): Promise<vo
       res.status(500).json({ message: 'Failed to update note', error: err });
     }
   };
+  
   export const getNoteById = async (req: Request, res: Response): Promise<void> => {
     const { noteId } = req.params;
   
