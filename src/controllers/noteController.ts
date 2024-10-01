@@ -193,4 +193,96 @@ export const getNotesByInitial = async (req: Request, res: Response): Promise<vo
     }
   };
 
+  export const deleteNote = async (req: Request, res: Response): Promise<void> => {
+    const { noteId } = req.params;
   
+    try {
+      // Находим и удаляем ноту
+      const deletedNote = await noteModel.findByIdAndDelete(noteId);
+  
+      if (!deletedNote) {
+        res.status(404).json({ message: 'Note not found' });
+        return;
+      }
+  
+      const noteName = deletedNote.name;
+  
+      // Удаляем ноту из всех парфюмов
+      await perfumeModel.updateMany(
+        {},
+        {
+          $pull: {
+            'notes.top_notes': noteName,
+            'notes.heart_notes': noteName,
+            'notes.base_notes': noteName,
+            'notes.additional_notes': noteName,
+          },
+        }
+      );
+  
+      res.status(200).json({ message: `Note '${noteName}' successfully deleted` });
+    } catch (err) {
+      res.status(500).json({ message: 'Failed to delete note', error: err });
+    }
+  };
+  
+  // Функция для обновления ноты
+  export const updateNote = async (req: Request, res: Response): Promise<void> => {
+    const { noteId } = req.params;
+    const { newName, newImage } = req.body; // Новое имя и изображение для ноты
+  
+    try {
+      // Находим старую ноту
+      const oldNote = await noteModel.findById(noteId);
+  
+      if (!oldNote) {
+        res.status(404).json({ message: 'Note not found' });
+        return;
+      }
+  
+      const oldNoteName = oldNote.name;
+  
+      // Обновляем ноту (имя и/или изображение)
+      if (newName) {
+        oldNote.name = newName;
+      }
+      if (newImage) {
+        oldNote.image = newImage; // Обновляем поле image
+      }
+      await oldNote.save();
+  
+      // Обновляем имя ноты в парфюмах, если имя изменилось
+      if (newName && oldNoteName !== newName) {
+        await perfumeModel.updateMany(
+          {
+            $or: [
+              { 'notes.top_notes': oldNoteName },
+              { 'notes.heart_notes': oldNoteName },
+              { 'notes.base_notes': oldNoteName },
+              { 'notes.additional_notes': oldNoteName },
+            ],
+          },
+          {
+            $set: {
+              'notes.$[top]': newName,
+              'notes.$[heart]': newName,
+              'notes.$[base]': newName,
+              'notes.$[additional]': newName,
+            },
+          },
+          {
+            arrayFilters: [
+              { 'top': oldNoteName },
+              { 'heart': oldNoteName },
+              { 'base': oldNoteName },
+              { 'additional': oldNoteName },
+            ],
+          }
+        );
+      }
+  
+      res.status(200).json({ message: `Note '${oldNoteName}' updated successfully`, updatedNote: oldNote });
+    } catch (err) {
+      res.status(500).json({ message: 'Failed to update note', error: err });
+    }
+  };
