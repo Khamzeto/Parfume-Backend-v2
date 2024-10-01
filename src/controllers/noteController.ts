@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import perfumeModel from '../models/perfumeModel'; // Модель парфюмов
 import noteModel from '../models/noteModel'; // Модель для нот
+import { transliterate as tr } from 'transliteration'; // Импорт транслитерации
 
 export const extractAndSaveNotes = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -90,28 +91,47 @@ export const getNotesByInitial = async (req: Request, res: Response): Promise<vo
   };
   export const searchNotes = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { query } = req.query; // Получаем поисковый запрос из параметров
+      const { query, page = 1, limit = 10 } = req.query; // Получаем поисковый запрос, страницу и лимит из параметров
   
-      // Проверка наличия запроса
-      if (!query || typeof query !== 'string') {
-        res.status(400).json({ message: 'Query parameter is required' });
-        return; // завершить выполнение функции
+      const itemsPerPage = parseInt(limit as string, 10); // Количество элементов на странице
+      const currentPage = parseInt(page as string, 10); // Текущая страница
+      const skip = (currentPage - 1) * itemsPerPage; // Количество элементов для пропуска
+  
+      let searchQuery = {};
+  
+      // Если запрос не пустой
+      if (query && typeof query === 'string') {
+        // Транслитерируем запрос
+        const transliteratedQuery = tr(query);
+        
+        // Используем регулярное выражение для поиска нот, которые содержат запрос (регистронезависимо)
+        const regex = new RegExp(transliteratedQuery, 'i');
+  
+        searchQuery = { name: { $regex: regex } }; // Условие поиска
       }
   
-      // Используем регулярное выражение для поиска нот, которые содержат запрос (case-insensitive)
-      const regex = new RegExp(query, 'i');
+      // Получаем общее количество записей
+      const totalNotes = await noteModel.countDocuments(searchQuery);
   
-      // Поиск нот, которые содержат строку запроса
-      const notes = await noteModel.find({ name: { $regex: regex } });
+      // Выполняем поиск с учетом лимитов и страниц
+      const notes = await noteModel
+        .find(searchQuery)
+        .skip(skip)
+        .limit(itemsPerPage);
   
       // Проверяем, были ли найдены ноты
       if (notes.length === 0) {
-        res.status(404).json({ message: `No notes found matching query: ${query}` });
-        return; // завершить выполнение функции
+        res.status(404).json({ message: `Ноты не найдены для запроса: ${query || 'все ноты'}` });
+        return;
       }
   
-      // Возвращаем найденные ноты
-      res.status(200).json(notes);
+      // Возвращаем найденные ноты и информацию о пагинации
+      res.status(200).json({
+        notes,
+        totalNotes,
+        totalPages: Math.ceil(totalNotes / itemsPerPage),
+        currentPage,
+      });
     } catch (error) {
       console.error('Ошибка при поиске нот:', error);
       res.status(500).json({ message: 'Ошибка при поиске нот' });
