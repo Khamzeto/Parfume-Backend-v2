@@ -232,6 +232,9 @@ export const getNotesByInitial = async (req: Request, res: Response): Promise<vo
     const { newName, newImage } = req.body; // Новое имя и изображение для ноты
   
     try {
+      // Логируем запрос для проверки приходящих данных
+      console.log('Request body:', req.body);
+  
       // Находим старую ноту
       const oldNote = await noteModel.findById(noteId);
   
@@ -243,14 +246,20 @@ export const getNotesByInitial = async (req: Request, res: Response): Promise<vo
       const oldNoteName = oldNote.name;
   
       // Обновляем только те поля, которые были переданы
-      if (newName) {
+      if (newName && newName.trim() !== "") {
         oldNote.name = newName;
       }
-      if (newImage !== undefined) { // Обновляем поле image, только если оно было передано в запросе
+  
+      // Обновляем поле image, если оно передано и не является undefined
+      if (newImage !== undefined && newImage.trim() !== "") {
         oldNote.image = newImage;
       }
   
-      await oldNote.save();
+      // Сохраняем обновленную ноту
+      const updatedNote = await oldNote.save();
+  
+      // Логируем обновленную ноту для проверки
+      console.log('Updated note:', updatedNote);
   
       // Обновляем имя ноты в парфюмах, если имя изменилось
       if (newName && oldNoteName !== newName) {
@@ -282,11 +291,12 @@ export const getNotesByInitial = async (req: Request, res: Response): Promise<vo
         );
       }
   
-      res.status(200).json({ message: `Note '${oldNoteName}' updated successfully`, updatedNote: oldNote });
+      res.status(200).json({ message: `Note '${oldNoteName}' updated successfully`, updatedNote });
     } catch (err) {
       res.status(500).json({ message: 'Failed to update note', error: err });
     }
   };
+  
   
   export const getNoteById = async (req: Request, res: Response): Promise<void> => {
     const { noteId } = req.params;
