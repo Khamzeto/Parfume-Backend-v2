@@ -4,8 +4,7 @@ import {
   getAllNotes,
   getNotesByInitial,
   getPerfumesByNote,
-  searchNotes,
-  updateNote,      // Импортируем функцию обновления ноты
+  searchNotes,  // Импортируем функцию обновления ноты
   deleteNote,       // Импортируем функцию удаления ноты
   getNoteById,
   addNote,
