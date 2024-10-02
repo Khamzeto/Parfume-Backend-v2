@@ -261,7 +261,10 @@ export const getParfumersByInitial = async (req: Request, res: Response): Promis
   };
   export const searchParfumers = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { query = '', page = 1, limit = 10 } = req.query;
+      let { query = '', page = 1, limit = 10 } = req.query;
+  
+      // Приведение query к строке (если это массив или другая структура)
+      query = Array.isArray(query) ? query[0] : query; // Приведение к строке, если это массив
   
       // Параметры пагинации
       const pageNumber = Number(page);
@@ -309,3 +312,5 @@ export const getParfumersByInitial = async (req: Request, res: Response): Promis
       res.status(500).json({ message: (err as Error).message });
     }
   };
+  
+  
