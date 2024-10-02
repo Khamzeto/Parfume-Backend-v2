@@ -12,38 +12,19 @@ interface Parfumer {
 
 export const getAllParfumers = async (req: Request, res: Response): Promise<void> => {
   try {
-    // Получаем уникальные имена парфюмеров на английском и русском из коллекции Perfume
-    const parfumersEn = await perfumeModel.distinct('perfumers_en');
-    const parfumersRu = await perfumeModel.distinct('perfumers'); // получаем русские имена
+    // Получаем уникальных парфюмеров на английском и русском языках из коллекции Perfume
+    const parfumersEn: string[] = await perfumeModel.distinct('perfumers_en');
+    const parfumersRu: string[] = await perfumeModel.distinct('perfumers');
 
-    // Объект для хранения парфюмеров
-    const parfumerMap: Record<string, { en: string; ru: string }> = {};
-
-    // Добавляем английские парфюмеры в карту
-    parfumersEn.forEach((en) => {
-      if (en && typeof en === 'string') {
-        parfumerMap[en] = { en, ru: '' };
-      }
+    // Проверяем, что есть соответствие между английскими и русскими парфюмерами
+    const combinedParfumers = parfumersEn.map((en, index) => {
+      const ru = parfumersRu[index] || ''; // Подбираем русское имя по индексу, если оно существует
+      return {
+        en, // Английское имя
+        ru, // Русское имя (если нет - пустая строка)
+        slug: slugify(en) // Создаем slug на основе английского имени
+      };
     });
-
-    // Добавляем русские парфюмеры в карту
-    parfumersRu.forEach((ru) => {
-      if (ru && typeof ru === 'string') {
-        // Найти соответствующее английское имя, если такое существует
-        const matchingEn = parfumersEn.find((en) => en.toLowerCase().includes(ru.toLowerCase()));
-        
-        if (matchingEn) {
-          // Если найдено соответствие, добавляем русское имя к нему
-          parfumerMap[matchingEn].ru = ru;
-        } else {
-          // Если соответствие не найдено, создаём новую запись только с русским именем
-          parfumerMap[ru] = { en: '', ru };
-        }
-      }
-    });
-
-    // Преобразуем карту в массив для ответа
-    const combinedParfumers = Object.values(parfumerMap);
 
     if (combinedParfumers.length === 0) {
       res.status(404).json({ message: 'No parfumers found' });
@@ -55,8 +36,8 @@ export const getAllParfumers = async (req: Request, res: Response): Promise<void
       combinedParfumers.map(async (parfumerObj) => {
         try {
           await parfumerModel.updateOne(
-            { en: parfumerObj.en }, // ищем по английскому имени
-            { $setOnInsert: parfumerObj }, // если не существует, добавляем
+            { slug: parfumerObj.slug }, // ищем по slug
+            { $setOnInsert: parfumerObj }, // если не существует, вставляем новый документ
             { upsert: true } // создаем документ, если не найдено совпадений
           );
         } catch (error) {
