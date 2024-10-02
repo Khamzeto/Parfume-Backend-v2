@@ -11,18 +11,22 @@ interface Parfumer {
 }
 
 // Получение всех парфюмеров
+// Получение всех парфюмеров
 export const getAllParfumers = async (req: Request, res: Response): Promise<void> => {
   try {
-    // Получаем уникальных парфюмеров из коллекции Perfume
-    const parfumers: string[] = await perfumeModel.distinct('perfumers');
+    // Получаем уникальных парфюмеров из коллекции Perfume на английском и русском языках
+    const parfumersEn: string[] = await perfumeModel.distinct('perfumers_en');
+    const parfumersRu: string[] = await perfumeModel.distinct('perfumers'); // добавляем работу с парфюмерами на русском
 
-    if (parfumers.length === 0) {
+    const allParfumers: string[] = [...new Set([...parfumersEn, ...parfumersRu])]; // объединяем и удаляем дубликаты
+
+    if (allParfumers.length === 0) {
       res.status(404).json({ message: 'No parfumers found' });
       return;
     }
 
     // Создаем массив объектов парфюмеров с оригинальным именем и slug
-    const parfumersWithSlugs: Parfumer[] = parfumers.map((parfumer) => ({
+    const parfumersWithSlugs: Parfumer[] = allParfumers.map((parfumer) => ({
       original: parfumer,
       slug: slugify(parfumer),
     }));
@@ -53,6 +57,7 @@ export const getAllParfumers = async (req: Request, res: Response): Promise<void
     res.status(500).json({ message: (err as Error).message });
   }
 };
+
 
 // Получение парфюмеров по первой букве
 export const getParfumersByInitial = async (req: Request, res: Response): Promise<void> => {
@@ -239,6 +244,7 @@ export const deleteParfumerById = async (req: Request, res: Response): Promise<v
 };
 
 // Поиск парфюмеров
+// Поиск парфюмеров
 export const searchParfumers = async (req: Request, res: Response): Promise<void> => {
   try {
     let { query = '', page = 1, limit = 10 } = req.query;
@@ -255,6 +261,7 @@ export const searchParfumers = async (req: Request, res: Response): Promise<void
     const limitNumber = Number(limit);
     const skip = (pageNumber - 1) * limitNumber;
 
+    // Нормализация и транслитерация запроса
     const normalizedQuery = query.normalize("NFD").replace(/[\u0300-\u036f]/g, ""); // Нормализация
     const transliteratedQuery = tr(normalizedQuery.toLowerCase()); // Транслитерация
 
@@ -262,11 +269,14 @@ export const searchParfumers = async (req: Request, res: Response): Promise<void
 
     if (query) {
       filters.$or = [
-        { original: { $regex: normalizedQuery, $options: 'i' } },
-        { original: { $regex: transliteratedQuery, $options: 'i' } },
+        { original: { $regex: normalizedQuery, $options: 'i' } },  // Поиск по латинице
+        { original: { $regex: transliteratedQuery, $options: 'i' } },  // Поиск по транслитерации латиницы
+        { original: { $regex: query, $options: 'i' } },  // Поиск по русским словам напрямую
+        { original: { $regex: tr(query), $options: 'i' } },  // Транслитерация русского запроса
       ];
     }
 
+    // Выполнение поиска парфюмеров в базе данных
     const parfumersFromDb = await parfumerModel
       .find(filters)
       .skip(skip)
@@ -280,6 +290,7 @@ export const searchParfumers = async (req: Request, res: Response): Promise<void
     const totalResults = await parfumerModel.countDocuments(filters);
     const totalPages = Math.ceil(totalResults / limitNumber);
 
+    // Возвращаем результаты поиска
     res.json({
       parfumers: parfumersFromDb,
       totalPages,
@@ -290,6 +301,7 @@ export const searchParfumers = async (req: Request, res: Response): Promise<void
     res.status(500).json({ message: (err as Error).message });
   }
 };
+
 
 // Получение парфюмера по ID
 export const getParfumerById = async (req: Request, res: Response): Promise<void> => {
