@@ -16,33 +16,11 @@ export const getAllParfumers = async (req: Request, res: Response): Promise<void
     const parfumersEn: string[] = await perfumeModel.distinct('perfumers_en');
     const parfumersRu: string[] = await perfumeModel.distinct('perfumers'); // получаем русские имена
 
-    // Объект для хранения соответствия slug -> { en, ru }
-    const parfumerMap: Record<string, { en: string; ru: string; slug: string }> = {};
-
-    // Обрабатываем английские парфюмеры
-    parfumersEn.forEach((en, index) => {
-      if (en && typeof en === 'string') {
-        const slugEn = slugify(en);
-        parfumerMap[slugEn] = { en, ru: '', slug: slugEn }; // создаем slug на основе английского имени
-      }
-    });
-
-    // Обрабатываем русские парфюмеры и добавляем к существующим записям
-    parfumersRu.forEach((ru) => {
-      if (ru && typeof ru === 'string') {
-        const slugRu = slugify(ru);
-        // Если slug уже существует, добавляем русское имя
-        if (parfumerMap[slugRu]) {
-          parfumerMap[slugRu].ru = ru;
-        } else {
-          // Если не существует, добавляем новую запись с русским именем
-          parfumerMap[slugRu] = { en: '', ru, slug: slugRu };
-        }
-      }
-    });
-
-    // Преобразуем объект обратно в массив для ответа
-    const combinedParfumers: { en: string; ru: string; slug: string }[] = Object.values(parfumerMap);
+    // Массив для хранения парфюмеров с английскими и русскими именами
+    const combinedParfumers = parfumersEn.map((en, index) => ({
+      en: en || '',   // Если английского имени нет, то записываем пустую строку
+      ru: parfumersRu[index] || '',  // Если русского имени нет, то записываем пустую строку
+    }));
 
     if (combinedParfumers.length === 0) {
       res.status(404).json({ message: 'No parfumers found' });
@@ -51,10 +29,10 @@ export const getAllParfumers = async (req: Request, res: Response): Promise<void
 
     // Сохраняем каждого парфюмера в коллекцию Parfumer, если он еще не существует
     await Promise.all(
-      combinedParfumers.map(async (parfumerObj: { en: string; ru: string; slug: string }) => {
+      combinedParfumers.map(async (parfumerObj) => {
         try {
           await parfumerModel.updateOne(
-            { slug: parfumerObj.slug }, // ищем по slug
+            { en: parfumerObj.en }, // ищем по английскому имени
             { $setOnInsert: parfumerObj }, // если не существует, вставляем
             { upsert: true } // создаем документ, если не найдено совпадений
           );
