@@ -1,5 +1,5 @@
 import express from 'express';
-import { getAllParfumers, getParfumersByInitial, getPerfumesByParfumer } from '../controllers/parfumerController';
+import { addParfumer, deleteParfumerById, getAllParfumers, getParfumersByInitial, getPerfumesByParfumer, updateParfumer} from '../controllers/parfumerController';
 
 const router = express.Router();
 
@@ -7,5 +7,10 @@ const router = express.Router();
 router.get('/', getAllParfumers);
 router.get('/parfumers/:initial', getParfumersByInitial);
 router.get('/perfumes', getPerfumesByParfumer);
+router.put('/parfumers/:id', updateParfumer);
+router.post('/parfumers', addParfumer);
+
+// Удалить парфюмера по ID
+router.delete('/parfumers/:id', deleteParfumerById);
 
 export default router;
