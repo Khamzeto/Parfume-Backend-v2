@@ -263,8 +263,14 @@ export const getParfumersByInitial = async (req: Request, res: Response): Promis
     try {
       let { query = '', page = 1, limit = 10 } = req.query;
   
-      // Приведение query к строке (если это массив или другая структура)
-      query = Array.isArray(query) ? query[0] : query; // Приведение к строке, если это массив
+      // Проверка и приведение query к строке (если это массив или другая структура)
+      if (Array.isArray(query)) {
+        query = query[0]; // Если это массив, используем первый элемент
+      }
+  
+      if (typeof query !== 'string') {
+        query = ''; // Если query всё ещё не строка, установим его в пустую строку
+      }
   
       // Параметры пагинации
       const pageNumber = Number(page);
@@ -312,5 +318,6 @@ export const getParfumersByInitial = async (req: Request, res: Response): Promis
       res.status(500).json({ message: (err as Error).message });
     }
   };
+  
   
   
