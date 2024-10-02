@@ -12,31 +12,34 @@ interface Parfumer {
 
 export const getAllParfumers = async (req: Request, res: Response): Promise<void> => {
   try {
-    // Получаем уникальных парфюмеров на английском и русском из коллекции Perfume
-    const parfumersEn: string[] = await perfumeModel.distinct('perfumers_en');
-    const parfumersRu: string[] = await perfumeModel.distinct('perfumers'); // получаем русские имена
+    // Получаем уникальные имена парфюмеров на английском и русском из коллекции Perfume
+    const parfumersEn = await perfumeModel.distinct('perfumers_en');
+    const parfumersRu = await perfumeModel.distinct('perfumers');
 
-    // Создаем карту парфюмеров с английскими и русскими версиями
-    const parfumerMap: Record<string, { en: string, ru: string }> = {};
+    // Объект для хранения парфюмеров
+    const parfumerMap: Record<string, { en: string; ru: string }> = {};
 
-    // Добавляем в карту английские имена
+    // Добавляем английские парфюмеры в карту
     parfumersEn.forEach((en) => {
-      if (en) {
-        parfumerMap[en] = { en, ru: '' }; // если русского имени нет, оставляем пустым
+      if (en && typeof en === 'string') {
+        parfumerMap[en] = { en, ru: '' };
       }
     });
 
-    // Добавляем русские имена в карту
-    parfumersRu.forEach((ru, index) => {
-      if (ru && parfumersEn[index]) {
-        // Если английское имя уже есть в карте, добавляем русскую версию
-        if (parfumerMap[parfumersEn[index]]) {
-          parfumerMap[parfumersEn[index]].ru = ru;
+    // Добавляем русские парфюмеры в карту, сопоставляя по английскому имени
+    parfumersRu.forEach((ru) => {
+      if (ru && typeof ru === 'string') {
+        const en = parfumersEn.find((enItem) => enItem && enItem.includes(ru));
+        if (en) {
+          parfumerMap[en].ru = ru;
+        } else {
+          // Если английский эквивалент не найден, добавляем как отдельный элемент
+          parfumerMap[ru] = { en: '', ru };
         }
       }
     });
 
-    // Преобразуем карту в массив для ответа
+    // Преобразуем карту в массив
     const combinedParfumers = Object.values(parfumerMap);
 
     if (combinedParfumers.length === 0) {
@@ -44,13 +47,13 @@ export const getAllParfumers = async (req: Request, res: Response): Promise<void
       return;
     }
 
-    // Сохраняем каждого парфюмера в коллекцию Parfumer, если он еще не существует
+    // Сохраняем парфюмеров в коллекцию Parfumer, если они еще не существуют
     await Promise.all(
       combinedParfumers.map(async (parfumerObj) => {
         try {
           await parfumerModel.updateOne(
             { en: parfumerObj.en }, // ищем по английскому имени
-            { $setOnInsert: parfumerObj }, // если не существует, вставляем
+            { $setOnInsert: parfumerObj }, // если не существует, добавляем
             { upsert: true } // создаем документ, если не найдено совпадений
           );
         } catch (error) {
