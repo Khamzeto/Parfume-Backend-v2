@@ -15,32 +15,39 @@ interface Parfumer {
 export const getAllParfumers = async (req: Request, res: Response): Promise<void> => {
   try {
     // Получаем уникальных парфюмеров на английском и русском языках
-    const parfumersEn: string[] = await perfumeModel.distinct('perfumers_en');  // Английские парфюмеры
-    const parfumersRu: string[] = await perfumeModel.distinct('perfumers');     // Русские парфюмеры
+    const parfumersEn: string[] = await perfumeModel.distinct('perfumers_en');
+    const parfumersRu: string[] = await perfumeModel.distinct('perfumers');
 
-    // Объединяем парфюмеров с обоих полей и удаляем дубликаты
-    const allParfumers: string[] = [...new Set([...parfumersEn, ...parfumersRu])];
-
-    if (allParfumers.length === 0) {
+    // Проверяем, что оба массива не пустые
+    if (parfumersEn.length === 0 && parfumersRu.length === 0) {
       res.status(404).json({ message: 'Парфюмеры не найдены' });
       return;
     }
 
-    // Создаем массив объектов парфюмеров с оригинальным именем и slug
-    const parfumersWithSlugs: Parfumer[] = allParfumers.map((parfumer) => ({
-      original: parfumer,
-      slug: slugify(parfumer),
-    }));
+    // Создаем объект с парфюмерами на английском и русском и создаем slug
+    const combinedParfumers: { en: string, ru: string, slug: string }[] = parfumersEn.map((enName, index) => {
+      const ruName = parfumersRu[index] || ''; // Если нет русского варианта, сохраняем пустую строку
+      return {
+        en: enName,
+        ru: ruName,
+        slug: slugify(enName), // slug генерируется на основе английского имени
+      };
+    });
 
     // Сохраняем каждого парфюмера в коллекцию Parfumer, если он еще не существует
     await Promise.all(
-      parfumersWithSlugs.map(async (parfumerObj) => {
+      combinedParfumers.map(async (parfumerObj) => {
         try {
-          // Попробуйте сохранить парфюмера, если он еще не существует
           await parfumerModel.updateOne(
-            { slug: parfumerObj.slug },
-            { $setOnInsert: parfumerObj },
-            { upsert: true }
+            { slug: parfumerObj.slug }, // ищем по slug
+            {
+              $setOnInsert: {
+                perfumers_en: parfumerObj.en,
+                perfumers_ru: parfumerObj.ru,
+                slug: parfumerObj.slug
+              }
+            },
+            { upsert: true } // вставляем, если не найдено совпадений
           );
         } catch (error) {
           if (error instanceof Error) {
@@ -52,8 +59,8 @@ export const getAllParfumers = async (req: Request, res: Response): Promise<void
       })
     );
 
-    // Возвращаем парфюмеров с их slug
-    res.json(parfumersWithSlugs);
+    // Возвращаем список всех парфюмеров
+    res.json(combinedParfumers);
   } catch (err) {
     res.status(500).json({ message: (err as Error).message });
   }
