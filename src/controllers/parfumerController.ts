@@ -12,16 +12,23 @@ interface Parfumer {
 
 export const getAllParfumers = async (req: Request, res: Response): Promise<void> => {
   try {
-    // Получаем уникальных парфюмеров на английском и русском языках из коллекции Perfume
+    // Получаем уникальные английские и русские имена парфюмеров
     const parfumersEn: string[] = await perfumeModel.distinct('perfumers_en');
-    const parfumersRu: string[] = await perfumeModel.distinct('perfumers');
+    const parfumersRuMap: Record<string, string> = {}; // Словарь для хранения сопоставлений { англ. имя: русское имя }
 
-    // Проверяем, что есть соответствие между английскими и русскими парфюмерами
-    const combinedParfumers = parfumersEn.map((en, index) => {
-      const ru = parfumersRu[index] || ''; // Подбираем русское имя по индексу, если оно существует
+    const parfumersRuData = await perfumeModel.find({}, { perfumers: 1, perfumers_en: 1 }); // Получаем все документы с полями perfumers и perfumers_en
+    parfumersRuData.forEach(doc => {
+      if (doc.perfumers_en && doc.perfumers) {
+        parfumersRuMap[doc.perfumers_en] = doc.perfumers; // Сопоставляем английское имя с русским
+      }
+    });
+
+    // Формируем массив с объектами парфюмеров
+    const combinedParfumers = parfumersEn.map((en) => {
+      const ru = parfumersRuMap[en] || ''; // Ищем соответствующее русское имя, если его нет — пустая строка
       return {
         en, // Английское имя
-        ru, // Русское имя (если нет - пустая строка)
+        ru, // Русское имя
         slug: slugify(en) // Создаем slug на основе английского имени
       };
     });
@@ -52,6 +59,7 @@ export const getAllParfumers = async (req: Request, res: Response): Promise<void
     res.status(500).json({ message: (err as Error).message });
   }
 };
+
 
 
 
