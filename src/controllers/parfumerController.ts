@@ -12,27 +12,27 @@ interface Parfumer {
 
 export const getAllParfumers = async (req: Request, res: Response): Promise<void> => {
   try {
-    // Получаем уникальных парфюмеров на английском и русском языках из коллекции Perfume
+    // Получаем уникальных парфюмеров на английском и русском из коллекции Perfume
     const parfumersEn: string[] = await perfumeModel.distinct('perfumers_en');
-    const parfumersRu: string[] = await perfumeModel.distinct('perfumers'); // Получаем на русском
+    const parfumersRu: string[] = await perfumeModel.distinct('perfumers'); // получаем русские имена
 
-    // Создаем объект для сопоставления парфюмеров на английском языке с их русскими эквивалентами
-    const parfumerMap: Record<string, { en: string; ru: string }> = {};
+    // Объект для хранения соответствия slug -> { en, ru }
+    const parfumerMap: Record<string, { en: string; ru: string; slug: string }> = {};
 
-    // Заполняем объект английскими именами, проверяем, что имя не пустое
+    // Обрабатываем английские парфюмеры
     parfumersEn.forEach((en) => {
       if (en && typeof en === 'string') {
         const slugEn = slugify(en);
-        parfumerMap[slugEn] = { en: en, ru: '' };
+        parfumerMap[slugEn] = { en: en, ru: '', slug: slugEn }; // создаем slug на основе английского имени
       }
     });
 
-    // Для каждого парфюмера на русском пытаемся найти соответствие в объекте и добавляем русское имя
+    // Обрабатываем русские парфюмеры и добавляем в объект на основе совпадений
     parfumersRu.forEach((ru, index) => {
       if (ru && typeof ru === 'string' && parfumersEn[index]) {
         const slugEn = slugify(parfumersEn[index]);
         if (parfumerMap[slugEn]) {
-          parfumerMap[slugEn].ru = ru; // если найдено соответствие, добавляем русское имя
+          parfumerMap[slugEn].ru = ru; // добавляем русское имя, если slug совпадает
         }
       }
     });
@@ -50,9 +50,9 @@ export const getAllParfumers = async (req: Request, res: Response): Promise<void
       combinedParfumers.map(async (parfumerObj) => {
         try {
           await parfumerModel.updateOne(
-            { slug: slugify(parfumerObj.en) }, // ищем по slug на основе английского имени
-            { $setOnInsert: parfumerObj }, // если не существует, создаем
-            { upsert: true } // если не найдено, создаем
+            { slug: parfumerObj.slug }, // ищем по slug
+            { $setOnInsert: parfumerObj }, // если не существует, вставляем
+            { upsert: true } // создаем документ, если не найдено совпадений
           );
         } catch (error) {
           console.error('Error inserting parfumer:', error);
@@ -60,7 +60,7 @@ export const getAllParfumers = async (req: Request, res: Response): Promise<void
       })
     );
 
-    // Возвращаем парфюмеров с их slug
+    // Возвращаем результат
     res.json(combinedParfumers);
   } catch (err) {
     res.status(500).json({ message: (err as Error).message });
