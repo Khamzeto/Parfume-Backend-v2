@@ -12,7 +12,7 @@ router.post('/parfumers', addParfumer);
 router.get('/search', searchParfumers);
 
 // Удалить парфюмера по ID
-router.delete('/parfumers/:id', deleteParfumerById);
-router.get('/parfumers/id/:id', getParfumerById);
+router.delete('/:id', deleteParfumerById);
+router.get('/id/:id', getParfumerById);
 
 export default router;
