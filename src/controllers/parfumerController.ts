@@ -3,6 +3,7 @@ import perfumeModel from '../models/perfumeModel';
 import parfumerModel from '../models/parfumerModel';
 import { slugify } from '../utils/slugify';
 import Perfume from '../models/perfumeModel';
+import { transliterate as tr } from 'transliteration';
 
 interface Parfumer {
   original: string;
@@ -253,6 +254,56 @@ export const getParfumersByInitial = async (req: Request, res: Response): Promis
   
       res.status(200).json({
         message: `Parfumer '${parfumerRecord.original}' and ${result.deletedCount} perfumes deleted successfully`,
+      });
+    } catch (err) {
+      res.status(500).json({ message: (err as Error).message });
+    }
+  };
+  export const searchParfumers = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { query = '', page = 1, limit = 10 } = req.query;
+  
+      // Параметры пагинации
+      const pageNumber = Number(page);
+      const limitNumber = Number(limit);
+      const skip = (pageNumber - 1) * limitNumber;
+  
+      // Нормализация и транслитерация запроса
+      const normalizedQuery = query.normalize("NFD").replace(/[\u0300-\u036f]/g, ""); // Нормализация
+      const transliteratedQuery = tr(normalizedQuery.toLowerCase()); // Транслитерация
+  
+      // Фильтры для поиска парфюмеров
+      const filters: any = {};
+  
+      if (query) {
+        filters.$or = [
+          { original: { $regex: normalizedQuery, $options: 'i' } }, // Поиск по имени на латинице
+          { original: { $regex: transliteratedQuery, $options: 'i' } }, // Поиск по транслитерированному имени
+        ];
+      }
+  
+      // Если query пусто, просто выводим всех парфюмеров
+      const parfumersFromDb = await parfumerModel
+        .find(filters)
+        .skip(skip)
+        .limit(limitNumber);
+  
+      // Если результаты отсутствуют
+      if (parfumersFromDb.length === 0) {
+        res.status(404).json({ message: 'Parfumers not found' });
+        return;
+      }
+  
+      // Подсчет общего количества результатов для пагинации
+      const totalResults = await parfumerModel.countDocuments(filters);
+      const totalPages = Math.ceil(totalResults / limitNumber);
+  
+      // Ответ клиенту с результатами
+      res.json({
+        parfumers: parfumersFromDb,
+        totalPages: totalPages,
+        currentPage: pageNumber,
+        totalResults: totalResults,
       });
     } catch (err) {
       res.status(500).json({ message: (err as Error).message });
