@@ -16,11 +16,28 @@ export const getAllParfumers = async (req: Request, res: Response): Promise<void
     const parfumersEn: string[] = await perfumeModel.distinct('perfumers_en');
     const parfumersRu: string[] = await perfumeModel.distinct('perfumers'); // получаем русские имена
 
-    // Массив для хранения парфюмеров с английскими и русскими именами
-    const combinedParfumers = parfumersEn.map((en, index) => ({
-      en: en || '',   // Если английского имени нет, то записываем пустую строку
-      ru: parfumersRu[index] || '',  // Если русского имени нет, то записываем пустую строку
-    }));
+    // Создаем карту парфюмеров с английскими и русскими версиями
+    const parfumerMap: Record<string, { en: string, ru: string }> = {};
+
+    // Добавляем в карту английские имена
+    parfumersEn.forEach((en) => {
+      if (en) {
+        parfumerMap[en] = { en, ru: '' }; // если русского имени нет, оставляем пустым
+      }
+    });
+
+    // Добавляем русские имена в карту
+    parfumersRu.forEach((ru, index) => {
+      if (ru && parfumersEn[index]) {
+        // Если английское имя уже есть в карте, добавляем русскую версию
+        if (parfumerMap[parfumersEn[index]]) {
+          parfumerMap[parfumersEn[index]].ru = ru;
+        }
+      }
+    });
+
+    // Преобразуем карту в массив для ответа
+    const combinedParfumers = Object.values(parfumerMap);
 
     if (combinedParfumers.length === 0) {
       res.status(404).json({ message: 'No parfumers found' });
@@ -48,6 +65,7 @@ export const getAllParfumers = async (req: Request, res: Response): Promise<void
     res.status(500).json({ message: (err as Error).message });
   }
 };
+
 
 
 
