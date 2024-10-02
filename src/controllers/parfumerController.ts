@@ -322,4 +322,22 @@ export const getParfumersByInitial = async (req: Request, res: Response): Promis
   };
   
   
-  
+  // Добавляем функцию получения парфюмера по его ID
+export const getParfumerById = async (req: Request, res: Response): Promise<void> => {
+  const { id } = req.params;  // Получаем ID парфюмера из параметров
+
+  try {
+    // Ищем парфюмера в коллекции по ID
+    const parfumer = await parfumerModel.findById(id);
+
+    if (!parfumer) {
+      res.status(404).json({ message: 'Parfumer not found' });
+      return;
+    }
+
+    // Возвращаем найденного парфюмера
+    res.json(parfumer);
+  } catch (err) {
+    res.status(500).json({ message: (err as Error).message });
+  }
+};
