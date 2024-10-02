@@ -16,10 +16,16 @@ export const getAllParfumers = async (req: Request, res: Response): Promise<void
     const parfumersEn: string[] = await perfumeModel.distinct('perfumers_en');
     const parfumersRuMap: Record<string, string> = {}; // Словарь для хранения сопоставлений { англ. имя: русское имя }
 
-    const parfumersRuData = await perfumeModel.find({}, { perfumers: 1, perfumers_en: 1 }); // Получаем все документы с полями perfumers и perfumers_en
+    // Получаем все документы с полями perfumers и perfumers_en
+    const parfumersRuData = await perfumeModel.find({}, { perfumers: 1, perfumers_en: 1 });
+
+    // Обрабатываем каждый документ, содержащий англ. и рус. имена парфюмеров
     parfumersRuData.forEach(doc => {
-      if (doc.perfumers_en && doc.perfumers) {
-        parfumersRuMap[doc.perfumers_en] = doc.perfumers; // Сопоставляем английское имя с русским
+      if (Array.isArray(doc.perfumers_en) && Array.isArray(doc.perfumers)) {
+        doc.perfumers_en.forEach((enName, index) => {
+          const ruName = doc.perfumers[index] || ''; // Берем соответствующее русское имя, если оно есть
+          parfumersRuMap[enName] = ruName; // Сопоставляем англ. имя с русским
+        });
       }
     });
 
@@ -59,6 +65,7 @@ export const getAllParfumers = async (req: Request, res: Response): Promise<void
     res.status(500).json({ message: (err as Error).message });
   }
 };
+
 
 
 
