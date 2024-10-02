@@ -14,14 +14,15 @@ interface Parfumer {
 // Получение всех парфюмеров
 export const getAllParfumers = async (req: Request, res: Response): Promise<void> => {
   try {
-    // Получаем уникальных парфюмеров из коллекции Perfume на английском и русском языках
-    const parfumersEn: string[] = await perfumeModel.distinct('perfumers_en');
-    const parfumersRu: string[] = await perfumeModel.distinct('perfumers'); // добавляем работу с парфюмерами на русском
+    // Получаем уникальных парфюмеров на английском и русском языках
+    const parfumersEn: string[] = await perfumeModel.distinct('perfumers_en');  // Английские парфюмеры
+    const parfumersRu: string[] = await perfumeModel.distinct('perfumers');     // Русские парфюмеры
 
-    const allParfumers: string[] = [...new Set([...parfumersEn, ...parfumersRu])]; // объединяем и удаляем дубликаты
+    // Объединяем парфюмеров с обоих полей и удаляем дубликаты
+    const allParfumers: string[] = [...new Set([...parfumersEn, ...parfumersRu])];
 
     if (allParfumers.length === 0) {
-      res.status(404).json({ message: 'No parfumers found' });
+      res.status(404).json({ message: 'Парфюмеры не найдены' });
       return;
     }
 
@@ -37,15 +38,15 @@ export const getAllParfumers = async (req: Request, res: Response): Promise<void
         try {
           // Попробуйте сохранить парфюмера, если он еще не существует
           await parfumerModel.updateOne(
-            { slug: parfumerObj.slug }, // критерий поиска
-            { $setOnInsert: parfumerObj }, // данные для вставки, если не найдено совпадений
-            { upsert: true } // создает документ, если не найдено совпадений
+            { slug: parfumerObj.slug },
+            { $setOnInsert: parfumerObj },
+            { upsert: true }
           );
         } catch (error) {
           if (error instanceof Error) {
-            console.error(`Error inserting parfumer: ${error.message}`);
+            console.error(`Ошибка при вставке парфюмера: ${error.message}`);
           } else {
-            console.error('An unknown error occurred while inserting parfumer.');
+            console.error('Произошла неизвестная ошибка при вставке парфюмера.');
           }
         }
       })
@@ -57,6 +58,7 @@ export const getAllParfumers = async (req: Request, res: Response): Promise<void
     res.status(500).json({ message: (err as Error).message });
   }
 };
+
 
 
 // Получение парфюмеров по первой букве
