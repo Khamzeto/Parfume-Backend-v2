@@ -19,16 +19,21 @@ export const getAllParfumers = async (req: Request, res: Response): Promise<void
     // Создаем объект для сопоставления парфюмеров на английском языке с их русскими эквивалентами
     const parfumerMap: Record<string, { en: string; ru: string }> = {};
 
-    // Заполняем объект английскими именами
+    // Заполняем объект английскими именами, проверяем, что имя не пустое
     parfumersEn.forEach((en) => {
-      parfumerMap[slugify(en)] = { en: en, ru: '' };
+      if (en && typeof en === 'string') {
+        const slugEn = slugify(en);
+        parfumerMap[slugEn] = { en: en, ru: '' };
+      }
     });
 
     // Для каждого парфюмера на русском пытаемся найти соответствие в объекте и добавляем русское имя
     parfumersRu.forEach((ru, index) => {
-      const slugEn = slugify(parfumersEn[index]);
-      if (parfumerMap[slugEn]) {
-        parfumerMap[slugEn].ru = ru; // если найдено соответствие, добавляем русское имя
+      if (ru && typeof ru === 'string' && parfumersEn[index]) {
+        const slugEn = slugify(parfumersEn[index]);
+        if (parfumerMap[slugEn]) {
+          parfumerMap[slugEn].ru = ru; // если найдено соответствие, добавляем русское имя
+        }
       }
     });
 
@@ -61,6 +66,7 @@ export const getAllParfumers = async (req: Request, res: Response): Promise<void
     res.status(500).json({ message: (err as Error).message });
   }
 };
+
 
 
 
