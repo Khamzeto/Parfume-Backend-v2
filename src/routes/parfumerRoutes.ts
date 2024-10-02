@@ -7,7 +7,7 @@ const router = express.Router();
 router.get('/', getAllParfumers);
 router.get('/parfumers/:initial', getParfumersByInitial);
 router.get('/perfumes', getPerfumesByParfumer);
-router.put('/parfumers/:id', updateParfumer);
+router.put('/:id', updateParfumer);
 router.post('/parfumers', addParfumer);
 router.get('/search', searchParfumers);
 
