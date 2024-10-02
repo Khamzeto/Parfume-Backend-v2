@@ -20,23 +20,23 @@ export const getAllParfumers = async (req: Request, res: Response): Promise<void
     const parfumerMap: Record<string, { en: string; ru: string; slug: string }> = {};
 
     // Обрабатываем английские парфюмеры
-    parfumersEn.forEach((en) => {
+    parfumersEn.forEach((en, index) => {
       if (en && typeof en === 'string') {
         const slugEn = slugify(en);
-        parfumerMap[slugEn] = { en: en, ru: '', slug: slugEn }; // создаем slug на основе английского имени
+        parfumerMap[slugEn] = { en, ru: '', slug: slugEn }; // создаем slug на основе английского имени
       }
     });
 
-    // Обрабатываем русские парфюмеры и добавляем в объект на основе индекса
-    parfumersRu.forEach((ru, index) => {
-      if (ru && typeof ru === 'string' && parfumersEn[index]) {
-        const slugEn = slugify(parfumersEn[index]);
-        if (parfumerMap[slugEn]) {
-          parfumerMap[slugEn].ru = ru; // добавляем русское имя, если slug совпадает
+    // Обрабатываем русские парфюмеры и добавляем к существующим записям
+    parfumersRu.forEach((ru) => {
+      if (ru && typeof ru === 'string') {
+        const slugRu = slugify(ru);
+        // Если slug уже существует, добавляем русское имя
+        if (parfumerMap[slugRu]) {
+          parfumerMap[slugRu].ru = ru;
         } else {
-          // Если нет английского имени, добавляем запись с только русским
-          const slugRu = slugify(ru);
-          parfumerMap[slugRu] = { en: '', ru: ru, slug: slugRu };
+          // Если не существует, добавляем новую запись с русским именем
+          parfumerMap[slugRu] = { en: '', ru, slug: slugRu };
         }
       }
     });
@@ -70,6 +70,7 @@ export const getAllParfumers = async (req: Request, res: Response): Promise<void
     res.status(500).json({ message: (err as Error).message });
   }
 };
+
 
 
 
