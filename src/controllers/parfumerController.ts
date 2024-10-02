@@ -14,7 +14,7 @@ export const getAllParfumers = async (req: Request, res: Response): Promise<void
   try {
     // Получаем уникальных парфюмеров на английском и русском из коллекции Perfume
     const parfumersEn: string[] = await perfumeModel.distinct('perfumers_en');
-    const parfumersRu: string[] = await perfumeModel.distinct('perfumers_ru'); // собираем парфюмеров на русском
+    const parfumersRu: string[] = await perfumeModel.distinct('perfumers'); // собираем парфюмеров на русском
 
     // Объединяем и удаляем дубликаты
     const combinedParfumers = [...new Set(parfumersEn.map((en, index) => ({
