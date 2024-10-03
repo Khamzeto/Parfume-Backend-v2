@@ -206,10 +206,11 @@ export const addParfumer = async (req: Request, res: Response): Promise<void> =>
 };
 
 export const updateParfumer = async (req: Request, res: Response): Promise<void> => {
-  const { parfumerId } = req.params;
-  const { newName, newRuName } = req.body;
+  const { parfumerId } = req.params; // Получаем ID парфюмера из параметров
+  const { newName, newRuName } = req.body; // Получаем новые данные из тела запроса
 
   try {
+    // Находим парфюмера по его ID
     const existingParfumer = await parfumerModel.findById(parfumerId);
 
     if (!existingParfumer) {
@@ -217,52 +218,51 @@ export const updateParfumer = async (req: Request, res: Response): Promise<void>
       return;
     }
 
-    const oldName = existingParfumer.original;
-    const oldRuName = existingParfumer.original_ru;
+    const oldName = existingParfumer.original; // Сохраняем старое имя парфюмера
+    const oldRuName = existingParfumer.original_ru; // Сохраняем старое русское имя
 
-    // Обновляем поля парфюмера
+    // Обновляем только измененные поля
     if (newName) {
       existingParfumer.original = newName;
     }
+
     if (newRuName) {
       existingParfumer.original_ru = newRuName;
     }
 
+    // Сохраняем обновлённого парфюмера
     const updatedParfumer = await existingParfumer.save();
 
-    // Если имя изменилось, обновляем его в парфюмах
-    if (newName && oldName !== newName) {
-      console.log(`Обновляем парфюмера в духах с ${oldName} на ${newName}`);
+    // Обновляем конкретное имя парфюмера в массиве у духов
+    const updateResult = await perfumeModel.updateMany(
+      {
+        // Ищем парфюмы, где старое имя парфюмера присутствует
+        $or: [
+          { perfumers_en: oldName }, // В массиве английских имен парфюмеров
+          { perfumers: oldRuName }, // В массиве русских имен парфюмеров
+        ],
+      },
+      {
+        // Обновляем только изменённые имена в массиве
+        $set: {
+          'perfumers_en.$[elem]': newName || oldName, // Обновляем английское имя, если оно изменилось
+          'perfumers.$[elem]': newRuName || oldRuName, // Обновляем русское имя, если оно изменилось
+        },
+      },
+      {
+        arrayFilters: [
+          { elem: oldName }, // Для английского имени
+          { elem: oldRuName }, // Для русского имени
+        ],
+        multi: true, // Обновляем все документы, содержащие старого парфюмера
+      }
+    );
 
-      // Удаляем старое имя из массива и добавляем новое
-      const updateResult = await perfumeModel.updateMany(
-        { perfumers_en: oldName }, // Ищем духи с этим парфюмером
-        {
-          $pull: { perfumers_en: oldName }, // Удаляем старое имя
-          $push: { perfumers_en: newName }, // Добавляем новое имя
-        }
-      );
-      console.log('Результат обновления парфюмов (EN):', updateResult);
-    }
+    console.log('Результат обновления парфюмов:', updateResult);
 
-    if (newRuName && oldRuName !== newRuName) {
-      console.log(
-        `Обновляем русское имя парфюмера в духах с ${oldRuName} на ${newRuName}`
-      );
-
-      // Удаляем старое русское имя и добавляем новое
-      const updateResultRu = await perfumeModel.updateMany(
-        { perfumers: oldRuName }, // Ищем духи с русским именем
-        {
-          $pull: { perfumers: oldRuName }, // Удаляем старое русское имя
-          $push: { perfumers: newRuName }, // Добавляем новое русское имя
-        }
-      );
-      console.log('Результат обновления парфюмов (RU):', updateResultRu);
-    }
-
+    // Возвращаем успешный ответ
     res.status(200).json({
-      message: 'Парфюмер успешно обновлён',
+      message: `Парфюмер успешно обновлён`,
       updatedParfumer,
     });
   } catch (err) {
