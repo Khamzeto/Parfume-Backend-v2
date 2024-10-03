@@ -1,6 +1,13 @@
 // /src/routes/brandRoutes.ts
 import express from 'express';
-import { getAllBrands, getPerfumesByBrand, getBrandsByInitial } from '../controllers/brandController';
+import {
+  getAllBrands,
+  getPerfumesByBrand,
+  getBrandsByInitial,
+  updateBrand,
+  deleteBrandById,
+} from '../controllers/brandController';
+import { searchBrands } from '../controllers/perfumeController';
 
 const router = express.Router();
 
@@ -13,5 +20,10 @@ router.get('/perfumes', getPerfumesByBrand);
 
 // Маршрут для получения брендов по первой букве
 router.get('/initial/:initial', getBrandsByInitial);
+router.put('/brands/:brandId', updateBrand);
+
+// Маршрут для удаления бренда
+router.delete('/brands/:brandId', deleteBrandById);
+router.get('/searchBrands', searchBrands);
 
 export default router;
