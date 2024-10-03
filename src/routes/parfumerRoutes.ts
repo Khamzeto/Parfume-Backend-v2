@@ -1,5 +1,14 @@
 import express from 'express';
-import { addParfumer, deleteParfumerById, getAllParfumers, getParfumerById, getParfumersByInitial, getPerfumesByParfumer, searchParfumers, updateParfumer} from '../controllers/parfumerController';
+import {
+  addParfumer,
+  deleteParfumerById,
+  getAllParfumers,
+  getParfumerById,
+  getParfumersByInitial,
+  getPerfumesByParfumer,
+  searchParfumers,
+  updateParfumer,
+} from '../controllers/parfumerController';
 
 const router = express.Router();
 
@@ -7,7 +16,7 @@ const router = express.Router();
 router.get('/', getAllParfumers);
 router.get('/parfumers/:initial', getParfumersByInitial);
 router.get('/perfumes', getPerfumesByParfumer);
-router.put('/:id', updateParfumer);
+router.put('/:parfumerId', updateParfumer);
 router.post('/parfumers', addParfumer);
 router.get('/search', searchParfumers);
 
