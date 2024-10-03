@@ -282,3 +282,39 @@ export const getBrandById = async (req: Request, res: Response): Promise<void> =
     res.status(500).json({ message: (err as Error).message });
   }
 };
+// Создание нового бренда
+export const createBrand = async (req: Request, res: Response): Promise<void> => {
+  const { original } = req.body; // Получаем оригинальное название бренда из тела запроса
+
+  try {
+    if (!original) {
+      res.status(400).json({ message: 'Название бренда обязательно' });
+      return;
+    }
+
+    // Проверяем, существует ли бренд с таким названием
+    const existingBrand = await Brand.findOne({ original });
+
+    if (existingBrand) {
+      res.status(400).json({ message: 'Такой бренд уже существует' });
+      return;
+    }
+
+    // Генерируем slug на основе оригинального названия бренда
+    const slug = slugify(original);
+
+    // Создаем новый бренд
+    const newBrand = new Brand({ original, slug });
+
+    // Сохраняем бренд в базе данных
+    await newBrand.save();
+
+    res.status(201).json({
+      message: 'Бренд успешно создан',
+      brand: newBrand,
+    });
+  } catch (err) {
+    console.error('Ошибка при создании бренда:', err);
+    res.status(500).json({ message: 'Не удалось создать бренд', error: err });
+  }
+};

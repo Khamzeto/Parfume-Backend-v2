@@ -8,13 +8,14 @@ import {
   deleteBrandById,
   searchBrands,
   getBrandById,
+  createBrand,
 } from '../controllers/brandController';
 
 const router = express.Router();
 
 // Маршрут для получения всех уникальных брендов
 router.get('/brands', getAllBrands);
-
+router.post('/create', createBrand);
 router.get('/searchBrands', searchBrands);
 router.get('/:brand', getPerfumesByBrand);
 router.get('/perfumes', getPerfumesByBrand);
