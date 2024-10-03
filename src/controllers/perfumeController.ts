@@ -3,17 +3,21 @@ import Perfume from '../models/perfumeModel';
 import Fuse from 'fuse.js';
 import { transliterate as tr } from 'transliteration';
 import axios from 'axios';
-
-
+import perfumeModel from '../models/perfumeModel';
+import parfumerModel from '../models/parfumerModel';
 
 // Функция для перевода текста
-const translateText = async (text: string, srcLang: string, targetLang: string): Promise<string> => {
-  const url = "https://translate.google.com/translate_a/single";
+const translateText = async (
+  text: string,
+  srcLang: string,
+  targetLang: string
+): Promise<string> => {
+  const url = 'https://translate.google.com/translate_a/single';
   const params = {
-    client: "gtx",
+    client: 'gtx',
     sl: srcLang,
     tl: targetLang,
-    dt: "t",
+    dt: 't',
     q: text,
   };
 
@@ -26,7 +30,10 @@ const translateText = async (text: string, srcLang: string, targetLang: string):
 };
 
 // Контроллер для обновления
-export const translateAndUpdateAllFields = async (req: Request, res: Response): Promise<void> => {
+export const translateAndUpdateAllFields = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   const srcLang = 'en';
   const targetLang = 'ru';
 
@@ -49,9 +56,13 @@ export const translateAndUpdateAllFields = async (req: Request, res: Response): 
         );
 
         // Логируем количество обновленных документов
-        console.log(`Updated document with ID ${perfume._id}, modified: ${result.modifiedCount}`);
+        console.log(
+          `Updated document with ID ${perfume._id}, modified: ${result.modifiedCount}`
+        );
       } catch (err) {
-        console.error(`Не удалось обновить документ ID ${perfume._id}: ${(err as Error).message}`);
+        console.error(
+          `Не удалось обновить документ ID ${perfume._id}: ${(err as Error).message}`
+        );
         continue;
       }
     }
@@ -62,9 +73,6 @@ export const translateAndUpdateAllFields = async (req: Request, res: Response): 
     res.status(500).json({ message: (err as Error).message });
   }
 };
-
-
-
 
 export const searchPerfumes = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -77,7 +85,7 @@ export const searchPerfumes = async (req: Request, res: Response): Promise<void>
     }
 
     // Нормализация и транслитерация запроса
-    const normalizedQuery = query.normalize("NFD").replace(/[\u0300-\u036f]/g, ""); // Нормализация
+    const normalizedQuery = query.normalize('NFD').replace(/[\u0300-\u036f]/g, ''); // Нормализация
     const transliteratedQuery = tr(normalizedQuery.toLowerCase()); // Транслитерация
 
     // Параметры пагинации
@@ -89,7 +97,7 @@ export const searchPerfumes = async (req: Request, res: Response): Promise<void>
     let sortCriteria: any = {
       namePriority: -1,
       exactMatch: -1,
-      lengthDifference: 1
+      lengthDifference: 1,
     }; // По умолчанию сортировка по релевантности
 
     if (sortBy === 'popular') {
@@ -108,8 +116,8 @@ export const searchPerfumes = async (req: Request, res: Response): Promise<void>
         { name: { $regex: transliteratedQuery, $options: 'i' } }, // Поиск по транслитерированному имени
         { brand: { $regex: transliteratedQuery, $options: 'i' } }, // Поиск по транслитерированному бренду
         { name_ru: { $regex: query, $options: 'i' } }, // Поиск по имени на русском
-        { brand_ru: { $regex: query, $options: 'i' } } // Поиск по бренду на русском
-      ]
+        { brand_ru: { $regex: query, $options: 'i' } }, // Поиск по бренду на русском
+      ],
     };
 
     if (gender) {
@@ -134,35 +142,35 @@ export const searchPerfumes = async (req: Request, res: Response): Promise<void>
                   { $eq: ['$name', transliteratedQuery] },
                   { $eq: ['$brand', transliteratedQuery] },
                   { $eq: ['$name_ru', query] },
-                  { $eq: ['$brand_ru', query] }
-                ]
+                  { $eq: ['$brand_ru', query] },
+                ],
               },
               then: 1,
-              else: 0
-            }
+              else: 0,
+            },
           },
           namePriority: {
             $cond: {
               if: {
                 $or: [
-                  { $regexMatch: { input: "$name", regex: query, options: 'i' } },
-                  { $regexMatch: { input: "$name_ru", regex: query, options: 'i' } }
-                ]
+                  { $regexMatch: { input: '$name', regex: query, options: 'i' } },
+                  { $regexMatch: { input: '$name_ru', regex: query, options: 'i' } },
+                ],
               },
               then: 1,
-              else: 0
-            }
+              else: 0,
+            },
           },
           lengthDifference: {
-            $abs: { $subtract: [{ $strLenCP: "$name" }, normalizedQuery.length] }
+            $abs: { $subtract: [{ $strLenCP: '$name' }, normalizedQuery.length] },
           },
           rating_count: { $ifNull: ['$rating_count', 0] }, // Подсчет количества отзывов
-          rating_value: { $ifNull: ['$rating_value', 0] }  // Средний рейтинг
-        }
+          rating_value: { $ifNull: ['$rating_value', 0] }, // Средний рейтинг
+        },
       },
       { $sort: sortCriteria }, // Сортировка по критерию
       { $skip: skip },
-      { $limit: limitNumber }
+      { $limit: limitNumber },
     ]);
 
     // Если результаты отсутствуют
@@ -188,8 +196,6 @@ export const searchPerfumes = async (req: Request, res: Response): Promise<void>
   }
 };
 
-
-
 export const searchBrands = async (req: Request, res: Response): Promise<void> => {
   try {
     const { query, page = 1, limit = 10, sortBy = 'relevance', gender, year } = req.query;
@@ -201,7 +207,7 @@ export const searchBrands = async (req: Request, res: Response): Promise<void> =
     }
 
     // Нормализация и транслитерация запроса
-    const normalizedQuery = query.normalize("NFD").replace(/[\u0300-\u036f]/g, ""); // Нормализация
+    const normalizedQuery = query.normalize('NFD').replace(/[\u0300-\u036f]/g, ''); // Нормализация
     const transliteratedQuery = tr(normalizedQuery.toLowerCase()); // Транслитерация
 
     // Параметры пагинации
@@ -222,10 +228,10 @@ export const searchBrands = async (req: Request, res: Response): Promise<void> =
     // Фильтры по гендеру и году
     const filters: any = {
       $or: [
-        { brand: { $regex: normalizedQuery, $options: 'i' } },        // Поиск по бренду на латинице
-        { brand: { $regex: transliteratedQuery, $options: 'i' } },   // Поиск по транслитерированному бренду
-        { brand_ru: { $regex: query, $options: 'i' } }               // Поиск по бренду на русском
-      ]
+        { brand: { $regex: normalizedQuery, $options: 'i' } }, // Поиск по бренду на латинице
+        { brand: { $regex: transliteratedQuery, $options: 'i' } }, // Поиск по транслитерированному бренду
+        { brand_ru: { $regex: query, $options: 'i' } }, // Поиск по бренду на русском
+      ],
     };
 
     if (gender) {
@@ -247,20 +253,20 @@ export const searchBrands = async (req: Request, res: Response): Promise<void> =
                 $or: [
                   { $eq: ['$brand', normalizedQuery] },
                   { $eq: ['$brand', transliteratedQuery] },
-                  { $eq: ['$brand_ru', query] }
-                ]
+                  { $eq: ['$brand_ru', query] },
+                ],
               },
               then: 1,
-              else: 0
-            }
+              else: 0,
+            },
           },
-          rating_count: { $ifNull: ['$rating_count', 0] },  // Убедитесь, что поле для сортировки не пустое
-          rating_value: { $ifNull: ['$rating_value', 0] }
-        }
+          rating_count: { $ifNull: ['$rating_count', 0] }, // Убедитесь, что поле для сортировки не пустое
+          rating_value: { $ifNull: ['$rating_value', 0] },
+        },
       },
       { $sort: sortCriteria }, // Сортировка по критерию (популярность или непопулярность)
       { $skip: skip },
-      { $limit: limitNumber }
+      { $limit: limitNumber },
     ]);
 
     // Если результаты отсутствуют
@@ -286,14 +292,6 @@ export const searchBrands = async (req: Request, res: Response): Promise<void> =
   }
 };
 
-
-
-
-
-
-
-
-
 export const getPerfumeById = async (req: Request, res: Response): Promise<void> => {
   try {
     const perfume = await Perfume.findOne({ perfume_id: req.params.perfume_id });
@@ -318,11 +316,12 @@ export const getAllPerfumes = async (req: Request, res: Response): Promise<void>
     const skip = (pageNumber - 1) * limitNumber;
 
     // Условие для сортировки по популярности или непопулярности
-    const sortCondition = sortBy === 'popular' ? { rating_count: -1 } : { rating_count: 1 };
+    const sortCondition =
+      sortBy === 'popular' ? { rating_count: -1 } : { rating_count: 1 };
 
     // Запрос с фильтрацией, пагинацией и сортировкой
     const perfumes = await Perfume.find()
-      .sort(sortCondition as { [key: string]: 1 | -1 })  // Указываем тип явным образом
+      .sort(sortCondition as { [key: string]: 1 | -1 }) // Указываем тип явным образом
       .skip(skip)
       .limit(limitNumber);
 
@@ -338,7 +337,6 @@ export const getAllPerfumes = async (req: Request, res: Response): Promise<void>
     res.status(500).json({ message: (err as Error).message });
   }
 };
-
 
 // Получение всех парфюмов по бренду
 export const getPerfumesByBrand = async (req: Request, res: Response): Promise<void> => {
@@ -367,20 +365,71 @@ export const createPerfume = async (req: Request, res: Response): Promise<void> 
 };
 
 // Обновление парфюма по ID
-export const updatePerfume = async (req: Request, res: Response): Promise<void> => {
+export const updateParfumer = async (req: Request, res: Response): Promise<void> => {
+  const { parfumerId } = req.params; // Получаем ID парфюмера из параметров
+  const { newName, newRuName } = req.body; // Получаем новые данные из тела запроса (без newSlug)
+
   try {
-    const updatedPerfume = await Perfume.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true, runValidators: true }
-    );
-    if (!updatedPerfume) {
-      res.status(404).json({ message: 'Perfume not found' });
+    // Находим парфюмера по его ID
+    const existingParfumer = await parfumerModel.findById(parfumerId);
+
+    if (!existingParfumer) {
+      res.status(404).json({ message: 'Парфюмер не найден' });
       return;
     }
-    res.json(updatedPerfume);
+
+    const oldName = existingParfumer.original; // Сохраняем старое имя парфюмера
+    const oldRuName = existingParfumer.original_ru; // Сохраняем старое русское имя
+
+    // Проверяем, переданы ли новые значения, и обновляем только измененные поля
+    if (newName) {
+      existingParfumer.original = newName;
+    }
+
+    if (newRuName) {
+      existingParfumer.original_ru = newRuName;
+    }
+
+    // Замечание: slug никогда не изменяется, даже если изменилось имя
+    // existingParfumer.slug остается неизменным
+
+    // Сохраняем обновлённого парфюмера
+    const updatedParfumer = await existingParfumer.save();
+
+    // Если имя или русское имя изменилось, обновляем записи в духах
+    if ((newName && oldName !== newName) || (newRuName && oldRuName !== newRuName)) {
+      console.log('Обновляем парфюмера в парфюмах с', oldName, 'на', newName);
+
+      const updateResult = await perfumeModel.updateMany(
+        {
+          $or: [{ perfumers_en: oldName }, { perfumers: oldRuName }], // Обновляем только если английское или русское имя изменилось
+        },
+        {
+          $set: {
+            'perfumers_en.$[perfumerElem]': newName || oldName, // Если имя изменилось
+            'perfumers.$[perfumerElem]': newRuName || oldRuName, // Если русское имя изменилось
+          },
+        },
+        {
+          arrayFilters: [
+            { perfumerElem: oldName }, // Для английского имени
+            { perfumerElem: oldRuName }, // Для русского имени
+          ],
+          multi: true, // Обновляем все документы, содержащие старое имя
+        }
+      );
+
+      console.log('Результат обновления парфюмов:', updateResult);
+    }
+
+    // Возвращаем успешный ответ
+    res.status(200).json({
+      message: `Парфюмер успешно обновлён`,
+      updatedParfumer,
+    });
   } catch (err) {
-    res.status(400).json({ message: (err as Error).message });
+    console.error('Ошибка при обновлении парфюмера:', err);
+    res.status(500).json({ message: 'Не удалось обновить парфюмера', error: err });
   }
 };
 
