@@ -206,11 +206,10 @@ export const addParfumer = async (req: Request, res: Response): Promise<void> =>
 };
 
 export const updateParfumer = async (req: Request, res: Response): Promise<void> => {
-  const { parfumerId } = req.params; // Получаем ID парфюмера из параметров
-  const { newName, newSlug, newRuName } = req.body; // Получаем новые данные из тела запроса
+  const { parfumerId } = req.params;
+  const { newName, newRuName } = req.body;
 
   try {
-    // Находим парфюмера по его ID
     const existingParfumer = await parfumerModel.findById(parfumerId);
 
     if (!existingParfumer) {
@@ -218,63 +217,52 @@ export const updateParfumer = async (req: Request, res: Response): Promise<void>
       return;
     }
 
-    const oldName = existingParfumer.original; // Сохраняем старое имя парфюмера
-    const oldRuName = existingParfumer.original_ru; // Сохраняем старое русское имя
+    const oldName = existingParfumer.original;
+    const oldRuName = existingParfumer.original_ru;
 
-    // Логируем старые и новые значения для отладки
-    console.log(`Старое имя: ${oldName}, Старое русское имя: ${oldRuName}`);
-    console.log(
-      `Новое имя: ${newName}, Новый slug: ${newSlug}, Новое русское имя: ${newRuName}`
-    );
-
-    // Проверяем, переданы ли новые значения, и обновляем только измененные поля
+    // Обновляем поля парфюмера
     if (newName) {
       existingParfumer.original = newName;
     }
-
     if (newRuName) {
       existingParfumer.original_ru = newRuName;
     }
 
-    // Если slug передан, просто обновляем его без изменений
-    if (newSlug) {
-      existingParfumer.slug = newSlug;
-    }
-
-    // Сохраняем обновлённого парфюмера
     const updatedParfumer = await existingParfumer.save();
-    console.log('Парфюмер обновлен:', updatedParfumer);
 
-    // Если имя или русское имя изменилось, обновляем записи в духах
-    if ((newName && oldName !== newName) || (newRuName && oldRuName !== newRuName)) {
-      console.log('Обновляем парфюмера в парфюмах с', oldName, 'на', newName || oldName);
+    // Если имя изменилось, обновляем его в парфюмах
+    if (newName && oldName !== newName) {
+      console.log(`Обновляем парфюмера в духах с ${oldName} на ${newName}`);
 
-      // Обновляем все парфюмы, где использовано старое имя парфюмера
+      // Удаляем старое имя из массива и добавляем новое
       const updateResult = await perfumeModel.updateMany(
+        { perfumers_en: oldName }, // Ищем духи с этим парфюмером
         {
-          $or: [{ perfumers_en: oldName }, { perfumers: oldRuName }],
-        },
-        {
-          $set: {
-            'perfumers_en.$[elem]': newName || oldName,
-            'perfumers.$[elem]': newRuName || oldRuName,
-          },
-        },
-        {
-          arrayFilters: [
-            { elem: oldName }, // Условие фильтра для английского имени
-            { elem: oldRuName }, // Условие фильтра для русского имени
-          ],
-          multi: true, // Обновляем все документы, содержащие старое имя
+          $pull: { perfumers_en: oldName }, // Удаляем старое имя
+          $push: { perfumers_en: newName }, // Добавляем новое имя
         }
       );
-
-      console.log('Результат обновления парфюмов:', updateResult);
+      console.log('Результат обновления парфюмов (EN):', updateResult);
     }
 
-    // Возвращаем успешный ответ
+    if (newRuName && oldRuName !== newRuName) {
+      console.log(
+        `Обновляем русское имя парфюмера в духах с ${oldRuName} на ${newRuName}`
+      );
+
+      // Удаляем старое русское имя и добавляем новое
+      const updateResultRu = await perfumeModel.updateMany(
+        { perfumers: oldRuName }, // Ищем духи с русским именем
+        {
+          $pull: { perfumers: oldRuName }, // Удаляем старое русское имя
+          $push: { perfumers: newRuName }, // Добавляем новое русское имя
+        }
+      );
+      console.log('Результат обновления парфюмов (RU):', updateResultRu);
+    }
+
     res.status(200).json({
-      message: `Парфюмер успешно обновлён`,
+      message: 'Парфюмер успешно обновлён',
       updatedParfumer,
     });
   } catch (err) {
