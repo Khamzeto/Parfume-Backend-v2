@@ -7,6 +7,7 @@ import {
   updateBrand,
   deleteBrandById,
   searchBrands,
+  getBrandById,
 } from '../controllers/brandController';
 
 const router = express.Router();
@@ -24,5 +25,6 @@ router.put('/brands/:brandId', updateBrand);
 
 // Маршрут для удаления бренда
 router.delete('/brands/:brandId', deleteBrandById);
+router.get('id/:brandId', getBrandById);
 
 export default router;

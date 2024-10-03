@@ -259,3 +259,23 @@ export const searchBrands = async (req: Request, res: Response): Promise<void> =
     res.status(500).json({ message: (err as Error).message });
   }
 };
+// Получение бренда по ID
+export const getBrandById = async (req: Request, res: Response): Promise<void> => {
+  const { brandId } = req.params; // Получаем ID бренда из параметров
+
+  try {
+    // Ищем бренд по его ID
+    const brand = await Brand.findById(brandId);
+
+    if (!brand) {
+      res.status(404).json({ message: 'Бренд не найден' });
+      return;
+    }
+
+    // Возвращаем бренд
+    res.json(brand);
+  } catch (err) {
+    console.error('Ошибка при получении бренда по ID:', err);
+    res.status(500).json({ message: (err as Error).message });
+  }
+};
