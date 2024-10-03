@@ -367,7 +367,7 @@ export const createPerfume = async (req: Request, res: Response): Promise<void> 
 // Обновление парфюма по ID
 export const updateParfumer = async (req: Request, res: Response): Promise<void> => {
   const { parfumerId } = req.params; // Получаем ID парфюмера из параметров
-  const { newName, newRuName } = req.body; // Получаем новые данные из тела запроса (без newSlug)
+  const { newName, newRuName } = req.body; // Получаем новые данные из тела запроса
 
   try {
     // Находим парфюмера по его ID
@@ -390,32 +390,32 @@ export const updateParfumer = async (req: Request, res: Response): Promise<void>
       existingParfumer.original_ru = newRuName;
     }
 
-    // Замечание: slug никогда не изменяется, даже если изменилось имя
-    // existingParfumer.slug остается неизменным
-
     // Сохраняем обновлённого парфюмера
     const updatedParfumer = await existingParfumer.save();
 
     // Если имя или русское имя изменилось, обновляем записи в духах
     if ((newName && oldName !== newName) || (newRuName && oldRuName !== newRuName)) {
-      console.log('Обновляем парфюмера в парфюмах с', oldName, 'на', newName);
+      console.log('Обновляем парфюмера в парфюмах с', oldName, 'на', newName || oldName);
 
       const updateResult = await perfumeModel.updateMany(
         {
-          $or: [{ perfumers_en: oldName }, { perfumers: oldRuName }], // Обновляем только если английское или русское имя изменилось
+          $or: [
+            { perfumers_en: oldName }, // Обновляем если английское имя изменилось
+            { perfumers: oldRuName }, // Обновляем если русское имя изменилось
+          ],
         },
         {
           $set: {
-            'perfumers_en.$[perfumerElem]': newName || oldName, // Если имя изменилось
-            'perfumers.$[perfumerElem]': newRuName || oldRuName, // Если русское имя изменилось
+            'perfumers_en.$[perfumerElemEn]': newName || oldName, // Обновляем английское имя
+            'perfumers.$[perfumerElemRu]': newRuName || oldRuName, // Обновляем русское имя
           },
         },
         {
           arrayFilters: [
-            { perfumerElem: oldName }, // Для английского имени
-            { perfumerElem: oldRuName }, // Для русского имени
+            { perfumerElemEn: oldName }, // Фильтр для английского имени
+            { perfumerElemRu: oldRuName }, // Фильтр для русского имени
           ],
-          multi: true, // Обновляем все документы, содержащие старое имя
+          multi: true, // Обновляем все документы
         }
       );
 
