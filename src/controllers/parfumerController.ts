@@ -230,11 +230,11 @@ export const updateParfumer = async (req: Request, res: Response): Promise<void>
       existingParfumer.original_ru = newRuName;
     }
 
+    // Исправляем `slug`, убираем пробелы и преобразуем в lowercase
     if (newSlug) {
-      existingParfumer.slug = slugify(newSlug);
+      existingParfumer.slug = slugify(newSlug.trim().replace(/\s+/g, '_')).toLowerCase();
     } else if (newName) {
-      // Если slug не передан, но изменено имя, обновляем slug на основе нового имени
-      existingParfumer.slug = slugify(newName);
+      existingParfumer.slug = slugify(newName.trim().replace(/\s+/g, '_')).toLowerCase();
     }
 
     // Сохраняем обновлённого парфюмера
@@ -244,18 +244,18 @@ export const updateParfumer = async (req: Request, res: Response): Promise<void>
     if ((newName && oldName !== newName) || (newRuName && oldRuName !== newRuName)) {
       console.log('Обновляем парфюмера в парфюмах с', oldName, 'на', newName);
 
+      // Обновляем все парфюмы, где использовано старое имя парфюмера
       const updateResult = await perfumeModel.updateMany(
         {
-          perfumers_en: oldName, // Обновляем только если английское имя изменилось
+          $or: [{ perfumers_en: oldName }, { perfumers: oldRuName }],
         },
         {
           $set: {
-            'perfumers_en.$[perfumerElem]': newName || oldName, // Если имя изменилось
-            'perfumers.$[perfumerElem]': newRuName || oldRuName, // Если русское имя изменилось
+            'perfumers_en.$[elem]': newName || oldName,
+            'perfumers.$[elem]': newRuName || oldRuName,
           },
         },
         {
-          arrayFilters: [{ perfumerElem: oldName }],
           multi: true, // Обновляем все документы, содержащие старое имя
         }
       );
