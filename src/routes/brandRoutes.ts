@@ -12,7 +12,7 @@ import { searchBrands } from '../controllers/perfumeController';
 const router = express.Router();
 
 // Маршрут для получения всех уникальных брендов
-router.get('/', getAllBrands);
+router.get('/brands', getAllBrands);
 
 router.get('/searchBrands', searchBrands);
 router.get('/:brand', getPerfumesByBrand);
