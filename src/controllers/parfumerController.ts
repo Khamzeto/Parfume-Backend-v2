@@ -245,14 +245,14 @@ export const updateParfumer = async (req: Request, res: Response): Promise<void>
       {
         // Обновляем только изменённые имена в массиве
         $set: {
-          'perfumers_en.$[elem]': newName || oldName, // Обновляем английское имя, если оно изменилось
-          'perfumers.$[elem]': newRuName || oldRuName, // Обновляем русское имя, если оно изменилось
+          'perfumers_en.$[enElem]': newName || oldName, // Обновляем английское имя, если оно изменилось
+          'perfumers.$[ruElem]': newRuName || oldRuName, // Обновляем русское имя, если оно изменилось
         },
       },
       {
         arrayFilters: [
-          { elem: oldName }, // Для английского имени
-          { elem: oldRuName }, // Для русского имени
+          { enElem: oldName }, // Для английского имени
+          { ruElem: oldRuName }, // Для русского имени
         ],
         multi: true, // Обновляем все документы, содержащие старого парфюмера
       }
