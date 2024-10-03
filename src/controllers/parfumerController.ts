@@ -16,10 +16,13 @@ export const getAllParfumers = async (req: Request, res: Response): Promise<void
     const parfumersRuMap: Record<string, string> = {}; // Словарь для хранения сопоставлений { англ. имя: русское имя }
 
     // Получаем все документы с полями perfumers и perfumers_en
-    const parfumersRuData = await perfumeModel.find({}, { perfumers: 1, perfumers_en: 1 });
+    const parfumersRuData = await perfumeModel.find(
+      {},
+      { perfumers: 1, perfumers_en: 1 }
+    );
 
     // Обрабатываем каждый документ, содержащий англ. и рус. имена парфюмеров
-    parfumersRuData.forEach((doc) => {
+    parfumersRuData.forEach(doc => {
       if (Array.isArray(doc.perfumers_en) && Array.isArray(doc.perfumers)) {
         doc.perfumers_en.forEach((enName, index) => {
           const ruName = doc.perfumers[index] || ''; // Берем соответствующее русское имя, если оно есть
@@ -29,7 +32,7 @@ export const getAllParfumers = async (req: Request, res: Response): Promise<void
     });
 
     // Формируем массив с объектами парфюмеров
-    const combinedParfumers = parfumersEn.map((en) => {
+    const combinedParfumers = parfumersEn.map(en => {
       const ru = parfumersRuMap[en] || ''; // Ищем соответствующее русское имя, если его нет — пустая строка
       return {
         original: en, // Английское имя
@@ -45,7 +48,7 @@ export const getAllParfumers = async (req: Request, res: Response): Promise<void
 
     // Сохраняем каждого парфюмера в коллекцию Parfumer, если он еще не существует
     await Promise.all(
-      combinedParfumers.map(async (parfumerObj) => {
+      combinedParfumers.map(async parfumerObj => {
         try {
           await parfumerModel.updateOne(
             { slug: parfumerObj.slug }, // ищем по slug
@@ -65,7 +68,10 @@ export const getAllParfumers = async (req: Request, res: Response): Promise<void
   }
 };
 
-export const getParfumersByInitial = async (req: Request, res: Response): Promise<void> => {
+export const getParfumersByInitial = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
     const initial = req.params.initial.toUpperCase(); // Преобразуем букву в верхний регистр
 
@@ -89,11 +95,14 @@ export const getParfumersByInitial = async (req: Request, res: Response): Promis
   }
 };
 
-export const getPerfumesByParfumer = async (req: Request, res: Response): Promise<void> => {
+export const getPerfumesByParfumer = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   const page = parseInt(req.query.page as string) || 1;
   const limit = parseInt(req.query.limit as string) || 20;
   const skip = (page - 1) * limit;
-  const sortBy = req.query.sortBy as string || 'relevance'; // Default sorting is by relevance
+  const sortBy = (req.query.sortBy as string) || 'relevance'; // Default sorting is by relevance
   const gender = req.query.gender as string; // Gender filter (optional)
 
   try {
@@ -138,7 +147,11 @@ export const getPerfumesByParfumer = async (req: Request, res: Response): Promis
     }
 
     // Поиск духов
-    const perfumes = await perfumeModel.find(filters).sort(sortCriteria).skip(skip).limit(limit);
+    const perfumes = await perfumeModel
+      .find(filters)
+      .sort(sortCriteria)
+      .skip(skip)
+      .limit(limit);
 
     const totalPerfumes = await perfumeModel.countDocuments(filters);
 
@@ -208,31 +221,42 @@ export const updateParfumer = async (req: Request, res: Response): Promise<void>
     const oldName = existingParfumer.original; // Сохраняем старое имя парфюмера
     const oldRuName = existingParfumer.original_ru; // Сохраняем старое русское имя
 
-    // Обновляем имя и slug, если новые данные переданы
-    existingParfumer.original = newName || existingParfumer.original;
-    existingParfumer.original_ru = newRuName || existingParfumer.original_ru; // Обновляем русское имя, если указано
-    existingParfumer.slug = slugify(newSlug || newName || existingParfumer.original);
+    // Проверяем, переданы ли новые значения, и обновляем только измененные поля
+    if (newName) {
+      existingParfumer.original = newName;
+    }
+
+    if (newRuName) {
+      existingParfumer.original_ru = newRuName;
+    }
+
+    if (newSlug) {
+      existingParfumer.slug = slugify(newSlug);
+    } else if (newName) {
+      // Если slug не передан, но изменено имя, обновляем slug на основе нового имени
+      existingParfumer.slug = slugify(newName);
+    }
 
     // Сохраняем обновлённого парфюмера
     const updatedParfumer = await existingParfumer.save();
 
-    // Если имя изменилось, обновляем его в коллекции духов (в поле `perfumers`)
-    if (oldName !== newName || oldRuName !== newRuName) {
+    // Если имя или русское имя изменилось, обновляем записи в духах
+    if ((newName && oldName !== newName) || (newRuName && oldRuName !== newRuName)) {
       console.log('Обновляем парфюмера в парфюмах с', oldName, 'на', newName);
 
       const updateResult = await perfumeModel.updateMany(
         {
-          'perfumers_en': oldName, // Обновляем, если английское имя изменилось
+          perfumers_en: oldName, // Обновляем только если английское имя изменилось
         },
         {
           $set: {
-            'perfumers_en.$[perfumerElem]': newName,
-            'perfumers.$[perfumerElem]': newRuName, // Обновляем русское имя, если оно изменилось
+            'perfumers_en.$[perfumerElem]': newName || oldName, // Если имя изменилось
+            'perfumers.$[perfumerElem]': newRuName || oldRuName, // Если русское имя изменилось
           },
         },
         {
-          arrayFilters: [{ 'perfumerElem': oldName }],
-          multi: true, // Обновляем все документы, которые содержат старого парфюмера
+          arrayFilters: [{ perfumerElem: oldName }],
+          multi: true, // Обновляем все документы, содержащие старое имя
         }
       );
 
@@ -241,7 +265,7 @@ export const updateParfumer = async (req: Request, res: Response): Promise<void>
 
     // Возвращаем успешный ответ
     res.status(200).json({
-      message: `Парфюмер '${oldName}' успешно обновлён на '${newName}'`,
+      message: `Парфюмер успешно обновлён`,
       updatedParfumer,
     });
   } catch (err) {
@@ -263,7 +287,9 @@ export const deleteParfumerById = async (req: Request, res: Response): Promise<v
     }
 
     // Удаление всех духов, связанных с этим парфюмером
-    const result = await perfumeModel.deleteMany({ perfumers_en: parfumerRecord.original });
+    const result = await perfumeModel.deleteMany({
+      perfumers_en: parfumerRecord.original,
+    });
 
     res.status(200).json({
       message: `Parfumer '${parfumerRecord.original}' and ${result.deletedCount} perfumes deleted successfully`,
@@ -298,7 +324,10 @@ export const searchParfumers = async (req: Request, res: Response): Promise<void
       ];
     }
 
-    const parfumersFromDb = await parfumerModel.find(filters).skip(skip).limit(limitNumber);
+    const parfumersFromDb = await parfumerModel
+      .find(filters)
+      .skip(skip)
+      .limit(limitNumber);
 
     if (parfumersFromDb.length === 0) {
       res.status(404).json({ message: 'Parfumers not found' });
