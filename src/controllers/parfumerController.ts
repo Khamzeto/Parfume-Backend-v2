@@ -254,6 +254,10 @@ export const updateParfumer = async (req: Request, res: Response): Promise<void>
           },
         },
         {
+          arrayFilters: [
+            { elem: oldName }, // Условие фильтра для английского имени
+            { elem: oldRuName }, // Условие фильтра для русского имени
+          ],
           multi: true, // Обновляем все документы, содержащие старое имя
         }
       );
