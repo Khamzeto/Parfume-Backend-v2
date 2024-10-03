@@ -230,11 +230,9 @@ export const updateParfumer = async (req: Request, res: Response): Promise<void>
       existingParfumer.original_ru = newRuName;
     }
 
-    // Исправляем `slug`, убираем пробелы и преобразуем в lowercase
+    // Если slug передан, просто обновляем его без изменений
     if (newSlug) {
-      existingParfumer.slug = slugify(newSlug.trim().replace(/\s+/g, '_')).toLowerCase();
-    } else if (newName) {
-      existingParfumer.slug = slugify(newName.trim().replace(/\s+/g, '_')).toLowerCase();
+      existingParfumer.slug = newSlug;
     }
 
     // Сохраняем обновлённого парфюмера
