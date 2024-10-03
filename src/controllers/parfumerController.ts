@@ -221,6 +221,12 @@ export const updateParfumer = async (req: Request, res: Response): Promise<void>
     const oldName = existingParfumer.original; // Сохраняем старое имя парфюмера
     const oldRuName = existingParfumer.original_ru; // Сохраняем старое русское имя
 
+    // Логируем старые и новые значения для отладки
+    console.log(`Старое имя: ${oldName}, Старое русское имя: ${oldRuName}`);
+    console.log(
+      `Новое имя: ${newName}, Новый slug: ${newSlug}, Новое русское имя: ${newRuName}`
+    );
+
     // Проверяем, переданы ли новые значения, и обновляем только измененные поля
     if (newName) {
       existingParfumer.original = newName;
@@ -237,10 +243,11 @@ export const updateParfumer = async (req: Request, res: Response): Promise<void>
 
     // Сохраняем обновлённого парфюмера
     const updatedParfumer = await existingParfumer.save();
+    console.log('Парфюмер обновлен:', updatedParfumer);
 
     // Если имя или русское имя изменилось, обновляем записи в духах
     if ((newName && oldName !== newName) || (newRuName && oldRuName !== newRuName)) {
-      console.log('Обновляем парфюмера в парфюмах с', oldName, 'на', newName);
+      console.log('Обновляем парфюмера в парфюмах с', oldName, 'на', newName || oldName);
 
       // Обновляем все парфюмы, где использовано старое имя парфюмера
       const updateResult = await perfumeModel.updateMany(
