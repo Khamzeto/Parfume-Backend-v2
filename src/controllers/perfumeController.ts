@@ -3,8 +3,6 @@ import Perfume from '../models/perfumeModel';
 import Fuse from 'fuse.js';
 import { transliterate as tr } from 'transliteration';
 import axios from 'axios';
-import perfumeModel from '../models/perfumeModel';
-import parfumerModel from '../models/parfumerModel';
 
 // Функция для перевода текста
 const translateText = async (
@@ -365,71 +363,19 @@ export const createPerfume = async (req: Request, res: Response): Promise<void> 
 };
 
 // Обновление парфюма по ID
-export const updateParfumer = async (req: Request, res: Response): Promise<void> => {
-  const { parfumerId } = req.params; // Получаем ID парфюмера из параметров
-  const { newName, newRuName } = req.body; // Получаем новые данные из тела запроса
-
+export const updatePerfume = async (req: Request, res: Response): Promise<void> => {
   try {
-    // Находим парфюмера по его ID
-    const existingParfumer = await parfumerModel.findById(parfumerId);
-
-    if (!existingParfumer) {
-      res.status(404).json({ message: 'Парфюмер не найден' });
+    const updatedPerfume = await Perfume.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true,
+    });
+    if (!updatedPerfume) {
+      res.status(404).json({ message: 'Perfume not found' });
       return;
     }
-
-    const oldName = existingParfumer.original; // Сохраняем старое имя парфюмера
-    const oldRuName = existingParfumer.original_ru; // Сохраняем старое русское имя
-
-    // Проверяем, переданы ли новые значения, и обновляем только измененные поля
-    if (newName) {
-      existingParfumer.original = newName;
-    }
-
-    if (newRuName) {
-      existingParfumer.original_ru = newRuName;
-    }
-
-    // Сохраняем обновлённого парфюмера
-    const updatedParfumer = await existingParfumer.save();
-
-    // Если имя или русское имя изменилось, обновляем записи в духах
-    if ((newName && oldName !== newName) || (newRuName && oldRuName !== newRuName)) {
-      console.log('Обновляем парфюмера в парфюмах с', oldName, 'на', newName || oldName);
-
-      const updateResult = await perfumeModel.updateMany(
-        {
-          $or: [
-            { perfumers_en: oldName }, // Обновляем если английское имя изменилось
-            { perfumers: oldRuName }, // Обновляем если русское имя изменилось
-          ],
-        },
-        {
-          $set: {
-            'perfumers_en.$[perfumerElemEn]': newName || oldName, // Обновляем английское имя
-            'perfumers.$[perfumerElemRu]': newRuName || oldRuName, // Обновляем русское имя
-          },
-        },
-        {
-          arrayFilters: [
-            { perfumerElemEn: oldName }, // Фильтр для английского имени
-            { perfumerElemRu: oldRuName }, // Фильтр для русского имени
-          ],
-          multi: true, // Обновляем все документы
-        }
-      );
-
-      console.log('Результат обновления парфюмов:', updateResult);
-    }
-
-    // Возвращаем успешный ответ
-    res.status(200).json({
-      message: `Парфюмер успешно обновлён`,
-      updatedParfumer,
-    });
+    res.json(updatedPerfume);
   } catch (err) {
-    console.error('Ошибка при обновлении парфюмера:', err);
-    res.status(500).json({ message: 'Не удалось обновить парфюмера', error: err });
+    res.status(400).json({ message: (err as Error).message });
   }
 };
 
