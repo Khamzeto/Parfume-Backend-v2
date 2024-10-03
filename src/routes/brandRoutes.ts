@@ -25,6 +25,6 @@ router.put('/brands/:brandId', updateBrand);
 
 // Маршрут для удаления бренда
 router.delete('/brands/:brandId', deleteBrandById);
-router.get('id/:brandId', getBrandById);
+router.get('/id/:brandId', getBrandById);
 
 export default router;
