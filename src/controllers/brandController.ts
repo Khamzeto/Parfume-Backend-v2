@@ -160,11 +160,13 @@ export const updateBrand = async (req: Request, res: Response): Promise<void> =>
 
     const oldName = existingBrand.original; // Сохраняем старое имя бренда
 
-    // Обновляем имя и slug, если новые данные переданы
+    // Обновляем только имя, если новые данные переданы
     existingBrand.original = newName || existingBrand.original;
-    existingBrand.slug = newSlug
-      ? slugify(newSlug)
-      : slugify(newName || existingBrand.original);
+
+    // Если явно передан новый slug, обновляем его
+    if (newSlug) {
+      existingBrand.slug = newSlug;
+    }
 
     // Сохраняем обновлённый бренд
     const updatedBrand = await existingBrand.save();
@@ -186,6 +188,7 @@ export const updateBrand = async (req: Request, res: Response): Promise<void> =>
     res.status(500).json({ message: 'Не удалось обновить бренд', error: err });
   }
 };
+
 // Удаление бренда по ID
 export const deleteBrandById = async (req: Request, res: Response): Promise<void> => {
   const { brandId } = req.params;
