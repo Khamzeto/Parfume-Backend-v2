@@ -14,7 +14,7 @@ const router = express.Router();
 // Маршрут для получения всех уникальных брендов
 router.get('/', getAllBrands);
 
-// Маршрут для получения парфюмов по бренду
+router.get('/searchBrands', searchBrands);
 router.get('/:brand', getPerfumesByBrand);
 router.get('/perfumes', getPerfumesByBrand);
 
@@ -24,6 +24,5 @@ router.put('/brands/:brandId', updateBrand);
 
 // Маршрут для удаления бренда
 router.delete('/brands/:brandId', deleteBrandById);
-router.get('/searchBrands', searchBrands);
 
 export default router;
