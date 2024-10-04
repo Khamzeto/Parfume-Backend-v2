@@ -9,7 +9,6 @@ import {
   searchPerfumes,
   translateAndUpdateAllFields,
   searchBrands,
-
 } from '../controllers/perfumeController';
 
 const router = express.Router();
@@ -22,8 +21,5 @@ router.get('/:perfume_id', getPerfumeById);
 router.post('/', createPerfume);
 router.put('/:id', updatePerfume);
 router.delete('/:id', deletePerfume);
-
-
-
 
 export default router;
