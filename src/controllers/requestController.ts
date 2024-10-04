@@ -4,11 +4,10 @@ import RequestModel from '../models/requestModel'; // Модель заявки
 
 // Создание заявки
 export const createRequest = async (req: Request, res: Response): Promise<void> => {
-  const { userId, perfumeId, changes } = req.body;
+  const { perfumeId, changes } = req.body;
 
   try {
     const newRequest = new RequestModel({
-      userId,
       perfumeId,
       changes,
       status: 'pending',
