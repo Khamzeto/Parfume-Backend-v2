@@ -13,7 +13,7 @@ import passport from 'passport'; // Подключение passport
 import dotenv from 'dotenv';
 
 const app: Application = express();
-const PORT = 3002;
+const PORT = 3001;
 
 // Подключение к MongoDB
 connectDB();
