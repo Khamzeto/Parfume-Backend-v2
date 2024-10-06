@@ -7,6 +7,8 @@ import noteRoutes from './src/routes/noteRoutes';
 import requestRoutes from './src/routes/requestRoutes';
 import authRoutes from './src/routes/authRoutes';
 import cors from 'cors';
+import passportConfig from './src/config/passport'; // Конфигурация passport
+import passport from 'passport'; // Подключение passport
 
 const app: Application = express();
 const PORT = 3001;
@@ -24,6 +26,8 @@ const allowedOrigins = [
   'http://172.20.10.5:3001',
   'http://81.29.136.136:3000',
 ];
+passportConfig(passport);
+app.use(passport.initialize());
 
 // Настройка CORS с проверкой источника
 app.use(
