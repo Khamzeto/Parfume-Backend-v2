@@ -12,7 +12,7 @@ const router = express.Router();
 
 // Интерфейс для расширения Request и добавления свойства user
 interface AuthRequest extends Request {
-  user: any; // Замените `any` на ваш интерфейс пользователя, если он есть
+  user?: any; // Свойство 'user' теперь опционально
 }
 
 // Регистрация пользователя

@@ -1,9 +1,9 @@
 // controllers/authController.ts
 
 import { Request, Response, NextFunction } from 'express';
-import User, { IUser } from '../models/User';
+import User, { IUser } from '../models/userModel';
 import jwt from 'jsonwebtoken';
-import { jwtSecret } from '../config';
+import { jwtSecret } from '../config/index';
 import { validationResult } from 'express-validator';
 import passport from 'passport';
 
