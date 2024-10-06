@@ -4,7 +4,13 @@ import express from 'express';
 import passport from 'passport';
 import { Request, Response, NextFunction } from 'express';
 import { body } from 'express-validator';
-import { register, login, logout } from '../controllers/authController';
+import {
+  register,
+  login,
+  logout,
+  getUsers,
+  getUserById,
+} from '../controllers/authController';
 import jwt from 'jsonwebtoken';
 import { jwtSecret } from '../config';
 

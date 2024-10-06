@@ -88,3 +88,65 @@ export const logout = (req: Request, res: Response): void => {
     res.json({ msg: 'Вы вышли из системы' });
   });
 };
+export const getUsers = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const users: IUser[] = await User.find();
+    return res.status(200).json(users);
+  } catch (err: any) {
+    return res.status(500).json({ msg: 'Ошибка сервера', error: err.message });
+  }
+};
+
+// Получение одного пользователя по id
+export const getUserById = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const user: IUser | null = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ msg: 'Пользователь не найден' });
+    }
+    return res.status(200).json(user);
+  } catch (err: any) {
+    return res.status(500).json({ msg: 'Ошибка сервера', error: err.message });
+  }
+};
+
+// Обновление данных пользователя
+export const updateUser = async (req: Request, res: Response): Promise<Response> => {
+  const { username, email } = req.body;
+
+  try {
+    const user: IUser | null = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ msg: 'Пользователь не найден' });
+    }
+
+    // Обновляем данные пользователя
+    user.username = username || user.username;
+    user.email = email || user.email;
+    await user.save();
+
+    return res.status(200).json({
+      msg: 'Данные пользователя обновлены',
+      user: { id: user._id, username: user.username, email: user.email },
+    });
+  } catch (err: any) {
+    return res.status(500).json({ msg: 'Ошибка сервера', error: err.message });
+  }
+};
+
+// Удаление пользователя
+export const deleteUser = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const user: IUser | null = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ msg: 'Пользователь не найден' });
+    }
+
+    // Удаление пользователя с использованием deleteOne
+    await User.deleteOne({ _id: req.params.id });
+
+    return res.status(200).json({ msg: 'Пользователь удален' });
+  } catch (err: any) {
+    return res.status(500).json({ msg: 'Ошибка сервера', error: err.message });
+  }
+};
