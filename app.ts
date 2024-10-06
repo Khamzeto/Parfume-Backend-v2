@@ -5,6 +5,7 @@ import parfumerRoutes from './src/routes/parfumerRoutes';
 import brandRoutes from './src/routes/brandRoutes'; // Импорт маршрутов для брендов
 import noteRoutes from './src/routes/noteRoutes';
 import requestRoutes from './src/routes/requestRoutes';
+import authRoutes from './src/routes/authRoutes';
 import cors from 'cors';
 
 const app: Application = express();
@@ -51,6 +52,7 @@ app.use('/notes', noteRoutes);
 // Использование маршрутов для брендов
 app.use('/brands', brandRoutes);
 app.use('/requests', requestRoutes);
+app.use('/auth', authRoutes);
 
 // Запуск сервера
 app.listen(PORT, () => {
