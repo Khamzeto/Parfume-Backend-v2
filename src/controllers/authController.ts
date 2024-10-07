@@ -150,3 +150,102 @@ export const deleteUser = async (req: Request, res: Response): Promise<Response>
     return res.status(500).json({ msg: 'Ошибка сервера', error: err.message });
   }
 };
+export const addToWishlist = async (req: Request, res: Response): Promise<Response> => {
+  const userId = req.params.id;
+  const { perfumeId } = req.body;
+
+  try {
+    const user: IUser | null = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ msg: 'Пользователь не найден' });
+    }
+
+    // Проверка, есть ли парфюм уже в списке "Я хочу"
+    if (!user.wishlist.includes(perfumeId)) {
+      user.wishlist.push(perfumeId); // Добавление парфюма в список
+      await user.save();
+    }
+
+    return res
+      .status(200)
+      .json({ msg: 'Парфюм добавлен в список желаемого', wishlist: user.wishlist });
+  } catch (err: any) {
+    return res.status(500).json({ msg: 'Ошибка сервера', error: err.message });
+  }
+};
+
+// Удаление парфюма из "Я хочу"
+export const removeFromWishlist = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  const userId = req.params.id;
+  const { perfumeId } = req.body;
+
+  try {
+    const user: IUser | null = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ msg: 'Пользователь не найден' });
+    }
+
+    user.wishlist = user.wishlist.filter((id: string) => id !== perfumeId); // Удаление парфюма
+    await user.save();
+
+    return res
+      .status(200)
+      .json({ msg: 'Парфюм удалён из списка желаемого', wishlist: user.wishlist });
+  } catch (err: any) {
+    return res.status(500).json({ msg: 'Ошибка сервера', error: err.message });
+  }
+};
+
+// Добавление парфюма в коллекцию
+export const addToCollection = async (req: Request, res: Response): Promise<Response> => {
+  const userId = req.params.id;
+  const { perfumeId } = req.body;
+
+  try {
+    const user: IUser | null = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ msg: 'Пользователь не найден' });
+    }
+
+    if (!user.perfumeCollection.includes(perfumeId)) {
+      user.perfumeCollection.push(perfumeId); // Добавление парфюма в коллекцию
+      await user.save();
+    }
+
+    return res
+      .status(200)
+      .json({ msg: 'Парфюм добавлен в коллекцию', collection: user.perfumeCollection });
+  } catch (err: any) {
+    return res.status(500).json({ msg: 'Ошибка сервера', error: err.message });
+  }
+};
+
+// Удаление парфюма из коллекции
+export const removeFromCollection = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  const userId = req.params.id;
+  const { perfumeId } = req.body;
+
+  try {
+    const user: IUser | null = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ msg: 'Пользователь не найден' });
+    }
+
+    user.perfumeCollection = user.perfumeCollection.filter(
+      (id: string) => id !== perfumeId
+    ); // Удаление парфюма
+    await user.save();
+
+    return res
+      .status(200)
+      .json({ msg: 'Парфюм удалён из коллекции', collection: user.perfumeCollection });
+  } catch (err: any) {
+    return res.status(500).json({ msg: 'Ошибка сервера', error: err.message });
+  }
+};

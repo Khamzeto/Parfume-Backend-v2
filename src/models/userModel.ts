@@ -1,5 +1,3 @@
-// models/User.ts
-
 import mongoose, { Document, Schema } from 'mongoose';
 import bcrypt from 'bcrypt';
 
@@ -10,6 +8,8 @@ export interface IUser extends Document {
   vkId?: string;
   googleId?: string;
   createdAt: Date;
+  wishlist: string[]; // Массив строк для ID парфюмов
+  perfumeCollection: string[]; // Массив строк для ID парфюмов, которые у пользователя есть
   isValidPassword(password: string): Promise<boolean>;
 }
 
@@ -21,7 +21,7 @@ const UserSchema: Schema<IUser> = new Schema({
   email: {
     type: String,
     unique: true,
-    sparse: true, // позволяет уникальные значения или null
+    sparse: true,
     lowercase: true,
     trim: true,
   },
@@ -41,6 +41,14 @@ const UserSchema: Schema<IUser> = new Schema({
   createdAt: {
     type: Date,
     default: Date.now,
+  },
+  wishlist: {
+    type: [String], // Массив строк для хранения ID парфюмов, которые пользователь хочет
+    default: [],
+  },
+  perfumeCollection: {
+    type: [String], // Массив строк для хранения ID парфюмов, которые у пользователя есть
+    default: [],
   },
 });
 
