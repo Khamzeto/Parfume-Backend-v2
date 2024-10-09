@@ -44,10 +44,32 @@ export const getAllGalleryRequests = async (
   res: Response
 ): Promise<void> => {
   try {
-    const requests = await GalleryRequest.find().populate('perfumeId');
-    res.json(requests);
+    const { page = 1, limit = 10 } = req.query; // Извлекаем параметры из запроса, используем значения по умолчанию
+
+    const pageNumber = Number(page); // Преобразуем номер страницы в число
+    const limitNumber = Number(limit); // Преобразуем количество элементов в число
+    const skip = (pageNumber - 1) * limitNumber; // Рассчитываем сколько записей нужно пропустить
+
+    // Получаем заявки с учетом пагинации
+    const requests = await GalleryRequest.find()
+      .populate('perfumeId')
+      .skip(skip)
+      .limit(limitNumber);
+
+    // Получаем общее количество заявок для пагинации
+    const totalRequests = await GalleryRequest.countDocuments();
+
+    res.json({
+      totalPages: Math.ceil(totalRequests / limitNumber),
+      currentPage: pageNumber,
+      totalRequests,
+      requests,
+    });
   } catch (err) {
-    res.status(500).json({ message: 'Ошибка при получении заявок на фото.' });
+    res.status(500).json({
+      message: 'Ошибка при получении заявок на фото.',
+      error: (err as Error).message,
+    });
   }
 };
 
