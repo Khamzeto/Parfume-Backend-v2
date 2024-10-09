@@ -26,11 +26,15 @@ export const createGalleryRequest = async (
       message: 'Заявка на добавление фото создана и отправлена на рассмотрение.',
     });
   } catch (err) {
+    // Приведение типа ошибки к Error
+    const errorMessage = err instanceof Error ? err.message : 'Неизвестная ошибка';
+
     // Логирование ошибки на сервере
-    console.error('Ошибка при создании заявки на фото:', err);
+    console.error('Ошибка при создании заявки на фото:', errorMessage);
+
     res
       .status(500)
-      .json({ message: 'Ошибка при создании заявки на фото.', error: err.message });
+      .json({ message: 'Ошибка при создании заявки на фото.', error: errorMessage });
   }
 };
 
