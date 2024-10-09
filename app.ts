@@ -8,7 +8,7 @@ import requestRoutes from './src/routes/requestRoutes';
 import authRoutes from './src/routes/authRoutes';
 import userRoutes from './src/routes/userRoutes';
 import galleryRoutes from './src/routes/galleryRoutes';
-
+import bodyParser from 'body-parser';
 import cors from 'cors';
 import passportConfig from './src/config/passport'; // Конфигурация passport
 import passport from 'passport'; // Подключение passport
@@ -16,7 +16,8 @@ import dotenv from 'dotenv';
 
 const app: Application = express();
 const PORT = 3001;
-
+app.use(bodyParser.json({ limit: '10mb' }));
+app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }));
 // Подключение к MongoDB
 connectDB();
 
