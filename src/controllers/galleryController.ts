@@ -9,6 +9,11 @@ export const createGalleryRequest = async (
 ): Promise<void> => {
   const { perfumeId, images } = req.body; // Принимаем массив base64 изображений
 
+  // Логирование данных, которые пришли в запросе
+  console.log('Тело запроса:', req.body);
+  console.log('perfumeId:', perfumeId);
+  console.log('Количество изображений:', images.length);
+
   try {
     const newGalleryRequest = new GalleryRequest({
       perfumeId,
@@ -17,13 +22,15 @@ export const createGalleryRequest = async (
     });
 
     await newGalleryRequest.save();
-    res
-      .status(201)
-      .json({
-        message: 'Заявка на добавление фото создана и отправлена на рассмотрение.',
-      });
+    res.status(201).json({
+      message: 'Заявка на добавление фото создана и отправлена на рассмотрение.',
+    });
   } catch (err) {
-    res.status(500).json({ message: 'Ошибка при создании заявки на фото.' });
+    // Логирование ошибки на сервере
+    console.error('Ошибка при создании заявки на фото:', err);
+    res
+      .status(500)
+      .json({ message: 'Ошибка при создании заявки на фото.', error: err.message });
   }
 };
 
