@@ -7,6 +7,8 @@ import noteRoutes from './src/routes/noteRoutes';
 import requestRoutes from './src/routes/requestRoutes';
 import authRoutes from './src/routes/authRoutes';
 import userRoutes from './src/routes/userRoutes';
+import galleryRoutes from './src/routes/galleryRoutes';
+
 import cors from 'cors';
 import passportConfig from './src/config/passport'; // Конфигурация passport
 import passport from 'passport'; // Подключение passport
@@ -61,6 +63,7 @@ app.use('/brands', brandRoutes);
 app.use('/requests', requestRoutes);
 app.use('/auth', authRoutes);
 app.use('/users', userRoutes);
+app.use('/gallery', galleryRoutes);
 
 // Запуск сервера
 app.listen(PORT, () => {

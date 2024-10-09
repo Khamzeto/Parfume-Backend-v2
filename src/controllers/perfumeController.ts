@@ -392,3 +392,54 @@ export const deletePerfume = async (req: Request, res: Response): Promise<void> 
     res.status(500).json({ message: (err as Error).message });
   }
 };
+export const uploadGalleryImages = async (req: Request, res: Response) => {
+  const { perfumeId } = req.params;
+  const { images } = req.body; // Массив изображений в формате base64
+
+  if (!images || !Array.isArray(images) || images.length === 0) {
+    return res.status(400).json({ message: 'Нет изображений для загрузки' });
+  }
+
+  try {
+    // Поиск парфюма по ID
+    const perfume = await Perfume.findById(perfumeId);
+
+    if (!perfume) {
+      return res.status(404).json({ message: 'Парфюм не найден' });
+    }
+
+    // Добавление изображений в массив gallery_images
+    perfume.gallery_images = [...perfume.gallery_images, ...images];
+
+    // Сохранение обновленного парфюма
+    await perfume.save();
+
+    res
+      .status(200)
+      .json({
+        message: 'Изображения успешно загружены',
+        gallery_images: perfume.gallery_images,
+      });
+  } catch (error) {
+    console.error('Ошибка загрузки изображений:', error);
+    res.status(500).json({ message: 'Ошибка загрузки изображений' });
+  }
+};
+export const getGalleryImages = async (req: Request, res: Response) => {
+  const { perfumeId } = req.params;
+
+  try {
+    // Поиск парфюма по ID
+    const perfume = await Perfume.findById(perfumeId);
+
+    if (!perfume) {
+      return res.status(404).json({ message: 'Парфюм не найден' });
+    }
+
+    // Возвращаем массив изображений из галереи
+    res.status(200).json({ gallery_images: perfume.gallery_images });
+  } catch (error) {
+    console.error('Ошибка получения изображений:', error);
+    res.status(500).json({ message: 'Ошибка получения изображений' });
+  }
+};
