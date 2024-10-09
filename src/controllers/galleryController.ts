@@ -7,8 +7,7 @@ export const createGalleryRequest = async (
   req: Request,
   res: Response
 ): Promise<void> => {
-  const { perfumeId, images } = req.body;
-  const userId = (req.user as { _id: string })?._id;
+  const { perfumeId, images, userId } = req.body;
 
   if (!userId) {
     console.log('Пользователь не найден');
