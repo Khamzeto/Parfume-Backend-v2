@@ -8,29 +8,33 @@ export const createGalleryRequest = async (
   res: Response
 ): Promise<void> => {
   const { perfumeId, images } = req.body;
-
-  // Приведение типа user с указанием наличия _id
-  const userId = (req.user as { _id: string })._id;
+  const userId = (req.user as { _id: string })?._id;
 
   if (!userId) {
+    console.log('Пользователь не найден');
     res.status(400).json({ message: 'Пользователь не найден.' });
     return;
   }
 
+  console.log('Поступил запрос на создание заявки: ', { perfumeId, userId, images });
+
   try {
     const newGalleryRequest = new GalleryRequest({
       perfumeId,
-      userId, // Добавляем ID пользователя
+      userId,
       images,
       status: 'pending',
     });
 
     await newGalleryRequest.save();
+    console.log('Заявка успешно создана:', newGalleryRequest);
+
     res.status(201).json({
       message: 'Заявка на добавление фото создана и отправлена на рассмотрение.',
     });
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : 'Неизвестная ошибка';
+    console.error('Ошибка при создании заявки:', errorMessage);
     res
       .status(500)
       .json({ message: 'Ошибка при создании заявки на фото.', error: errorMessage });
