@@ -72,7 +72,13 @@ export const login = async (
         return res.json({
           msg: 'Успешный вход',
           token,
-          user: { id: user._id, username: user.username, email: user.email },
+          user: {
+            id: user._id,
+            username: user.username,
+            email: user.email,
+            wishlist: user.wishlist,
+            perfumeCollection: user.perfumeCollection,
+          },
         });
       });
     }
