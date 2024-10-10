@@ -31,5 +31,5 @@ router.delete('/requests/:id', deleteArticleRequest);
 router.get('/requests/user/:userId', getArticleRequestsByUserId);
 router.get('/requests/user/:userId/approved', getApprovedArticleRequestsByUserId);
 
-router.put('/article/requests/:id', updateArticleRequest);
+router.put('/requests/:id', updateArticleRequest);
 export default router;
