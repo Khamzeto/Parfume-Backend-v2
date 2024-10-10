@@ -5,6 +5,7 @@ export interface IArticleRequest extends Document {
   title: string;
   description: string;
   content: string;
+  coverImage: string; // URL или base64 изображения обложки статьи
   userId: mongoose.Types.ObjectId; // ID пользователя, отправившего статью
   status: 'pending' | 'approved' | 'rejected';
 }
@@ -13,6 +14,7 @@ const articleRequestSchema: Schema = new Schema({
   title: { type: String, required: true },
   description: { type: String, required: true },
   content: { type: String, required: true }, // Основное содержание статьи
+  coverImage: { type: String, required: false }, // Поле для обложки статьи
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }, // Поле для ID пользователя
   status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' }, // Статус заявки
 });

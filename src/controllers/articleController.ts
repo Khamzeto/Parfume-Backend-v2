@@ -6,42 +6,33 @@ export const createArticleRequest = async (
   req: Request,
   res: Response
 ): Promise<void> => {
-  const { title, description, content, userId } = req.body;
+  const { title, description, content, coverImage, userId } = req.body;
 
   if (!userId) {
-    console.log('Пользователь не найден');
     res.status(400).json({ message: 'Пользователь не найден.' });
     return;
   }
-
-  console.log('Поступил запрос на создание заявки: ', {
-    title,
-    description,
-    content,
-    userId,
-  });
 
   try {
     const newArticleRequest = new ArticleRequest({
       title,
       description,
       content,
+      coverImage, // Сохраняем обложку статьи
       userId,
       status: 'pending',
     });
 
     await newArticleRequest.save();
-    console.log('Заявка успешно создана:', newArticleRequest);
-
     res.status(201).json({
       message: 'Заявка на добавление статьи создана и отправлена на рассмотрение.',
     });
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : 'Неизвестная ошибка';
-    console.error('Ошибка при создании заявки:', errorMessage);
-    res
-      .status(500)
-      .json({ message: 'Ошибка при создании заявки на статью.', error: errorMessage });
+    res.status(500).json({
+      message: 'Ошибка при создании заявки на статью.',
+      error: errorMessage,
+    });
   }
 };
 
@@ -95,7 +86,10 @@ export const approveArticleRequest = async (
 
     res.json({ message: 'Заявка одобрена и статья опубликована.' });
   } catch (err) {
-    res.status(500).json({ message: 'Ошибка при одобрении заявки на статью.' });
+    res.status(500).json({
+      message: 'Ошибка при одобрении заявки на статью.',
+      error: (err as Error).message,
+    });
   }
 };
 
@@ -113,9 +107,13 @@ export const rejectArticleRequest = async (
 
     request.status = 'rejected';
     await request.save();
+
     res.json({ message: 'Заявка отклонена.' });
   } catch (err) {
-    res.status(500).json({ message: 'Ошибка при отклонении заявки на статью.' });
+    res.status(500).json({
+      message: 'Ошибка при отклонении заявки на статью.',
+      error: (err as Error).message,
+    });
   }
 };
 
@@ -133,7 +131,10 @@ export const deleteArticleRequest = async (
 
     res.json({ message: 'Заявка удалена.' });
   } catch (err) {
-    res.status(500).json({ message: 'Ошибка при удалении заявки на статью.' });
+    res.status(500).json({
+      message: 'Ошибка при удалении заявки на статью.',
+      error: (err as Error).message,
+    });
   }
 };
 
@@ -145,13 +146,12 @@ export const getArticleRequestsByUserId = async (
   const userId = req.params.userId; // Получаем ID пользователя из параметров запроса
 
   try {
-    const { page = 1, limit = 10 } = req.query; // Параметры для пагинации
+    const { page = 1, limit = 10 } = req.query;
 
     const pageNumber = Number(page);
     const limitNumber = Number(limit);
     const skip = (pageNumber - 1) * limitNumber;
 
-    // Получаем заявки пользователя с пагинацией
     const requests = await ArticleRequest.find({ userId }).skip(skip).limit(limitNumber);
 
     const totalRequests = await ArticleRequest.countDocuments({ userId });
