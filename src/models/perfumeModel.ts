@@ -19,14 +19,15 @@ export interface IPerfume extends Document {
     base_notes: string[];
     additional_notes: string[];
   };
-  name_ru?: string;  // Поле может быть необязательным
-  brand_ru?: string; 
+  name_ru?: string; // Поле может быть необязательным
+  brand_ru?: string;
   release_year: number;
   gender: string;
   main_image: string;
   additional_images: string[];
+  gallery_images: string[];
   perfumers: string[];
-  perfumers_en: string[]; 
+  perfumers_en: string[];
   reviews: {
     username: string;
     nickname: string;
@@ -59,6 +60,7 @@ const perfumeSchema: Schema = new Schema({
   gender: String,
   main_image: String,
   additional_images: [String],
+  gallery_images: [String],
   perfumers: [String],
   perfumers_en: [String],
   reviews: [

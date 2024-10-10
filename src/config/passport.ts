@@ -2,9 +2,9 @@
 
 import passport from 'passport';
 import passportLocal from 'passport-local';
-import passportVK from 'passport-vkontakte';
+import passportVK, { StrategyOptions as VKStrategyOptions } from 'passport-vkontakte';
 import passportGoogle from 'passport-google-oauth20';
-import User, { IUser } from '../models/User';
+import User, { IUser } from '../models/userModel';
 
 const LocalStrategy = passportLocal.Strategy;
 const VKontakteStrategy = passportVK.Strategy;
@@ -49,16 +49,24 @@ export default function (passport: passport.PassportStatic) {
     )
   );
 
+  // Расширяем интерфейс VKStrategyOptions для включения недостающих свойств
+  interface ExtendedVKStrategyOptions extends VKStrategyOptions {
+    scope?: string[];
+    profileFields?: string[];
+  }
+
   // Стратегия ВКонтакте
+  const vkOptions: ExtendedVKStrategyOptions = {
+    clientID: process.env.VKONTAKTE_APP_ID || '',
+    clientSecret: process.env.VKONTAKTE_APP_SECRET || '',
+    callbackURL: 'http://localhost:3001/auth/vkontakte/callback',
+    scope: ['email'],
+    profileFields: ['email', 'city', 'bdate'],
+  };
+
   passport.use(
     new VKontakteStrategy(
-      {
-        clientID: process.env.VKONTAKTE_APP_ID || '',
-        clientSecret: process.env.VKONTAKTE_APP_SECRET || '',
-        callbackURL: 'http://localhost:3001/auth/vkontakte/callback',
-        scope: ['email'],
-        profileFields: ['email', 'city', 'bdate'],
-      },
+      vkOptions,
       async (
         accessToken: string,
         refreshToken: string,

@@ -4,7 +4,13 @@ import express from 'express';
 import passport from 'passport';
 import { Request, Response, NextFunction } from 'express';
 import { body } from 'express-validator';
-import { register, login, logout } from '../controllers/authController';
+import {
+  register,
+  login,
+  logout,
+  getUsers,
+  getUserById,
+} from '../controllers/authController';
 import jwt from 'jsonwebtoken';
 import { jwtSecret } from '../config';
 
@@ -12,7 +18,7 @@ const router = express.Router();
 
 // Интерфейс для расширения Request и добавления свойства user
 interface AuthRequest extends Request {
-  user: any; // Замените `any` на ваш интерфейс пользователя, если он есть
+  user?: any; // Свойство 'user' теперь опционально
 }
 
 // Регистрация пользователя
