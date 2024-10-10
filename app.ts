@@ -8,6 +8,7 @@ import requestRoutes from './src/routes/requestRoutes';
 import authRoutes from './src/routes/authRoutes';
 import userRoutes from './src/routes/userRoutes';
 import galleryRoutes from './src/routes/galleryRoutes';
+import articleRoutes from './src/routes/articleRoutes';
 import bodyParser from 'body-parser';
 import cors from 'cors';
 import passportConfig from './src/config/passport'; // Конфигурация passport
@@ -65,7 +66,7 @@ app.use('/requests', requestRoutes);
 app.use('/auth', authRoutes);
 app.use('/users', userRoutes);
 app.use('/gallery', galleryRoutes);
-
+app.use('/article', articleRoutes);
 // Запуск сервера
 app.listen(PORT, () => {
   console.log(`Сервер запущен на http://localhost:${PORT}`);
