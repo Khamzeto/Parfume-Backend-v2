@@ -169,3 +169,81 @@ export const getArticleRequestsByUserId = async (
     });
   }
 };
+// Обновление заявки на статью
+export const updateArticleRequest = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const { title, description, content, coverImage } = req.body;
+
+  try {
+    const request = await ArticleRequest.findById(req.params.id);
+
+    if (!request) {
+      res.status(404).json({ message: 'Заявка не найдена.' });
+      return;
+    }
+
+    // Разрешаем редактирование только если статья находится на проверке
+    if (request.status !== 'pending') {
+      res
+        .status(400)
+        .json({ message: 'Редактирование разрешено только для заявок на проверке.' });
+      return;
+    }
+
+    // Обновляем поля заявки
+    request.title = title || request.title;
+    request.description = description || request.description;
+    request.content = content || request.content;
+    request.coverImage = coverImage || request.coverImage;
+
+    await request.save();
+
+    res.json({ message: 'Заявка обновлена.' });
+  } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : 'Неизвестная ошибка';
+    res.status(500).json({
+      message: 'Ошибка при обновлении заявки на статью.',
+      error: errorMessage,
+    });
+  }
+};
+// Получение всех одобренных заявок на статьи по userId
+export const getApprovedArticleRequestsByUserId = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const userId = req.params.userId; // Получаем ID пользователя из параметров запроса
+
+  try {
+    const { page = 1, limit = 10 } = req.query;
+
+    const pageNumber = Number(page);
+    const limitNumber = Number(limit);
+    const skip = (pageNumber - 1) * limitNumber;
+
+    // Находим заявки пользователя, которые были одобрены
+    const requests = await ArticleRequest.find({ userId, status: 'approved' })
+      .skip(skip)
+      .limit(limitNumber);
+
+    const totalRequests = await ArticleRequest.countDocuments({
+      userId,
+      status: 'approved',
+    });
+
+    res.json({
+      totalPages: Math.ceil(totalRequests / limitNumber),
+      currentPage: pageNumber,
+      totalRequests,
+      requests,
+    });
+  } catch (err) {
+    res.status(500).json({
+      message:
+        'Ошибка при получении одобренных заявок на статьи для данного пользователя.',
+      error: (err as Error).message,
+    });
+  }
+};

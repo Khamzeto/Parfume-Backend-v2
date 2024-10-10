@@ -6,6 +6,7 @@ import {
   rejectArticleRequest,
   deleteArticleRequest,
   getArticleRequestsByUserId,
+  updateArticleRequest,
 } from '../controllers/articleController'; // Импорт контроллеров
 
 const router = Router();
@@ -27,5 +28,7 @@ router.delete('/requests/:id', deleteArticleRequest);
 
 // Получение заявок на статьи по userId
 router.get('/requests/user/:userId', getArticleRequestsByUserId);
+router.get('/requests/user/:userId/approved', getApprovedArticleRequestsByUserId);
 
+router.put('/article/requests/:id', updateArticleRequest);
 export default router;
