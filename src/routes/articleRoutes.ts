@@ -14,10 +14,10 @@ const router = Router();
 router.post('/requests', createArticleRequest);
 
 // Получение всех заявок на статьи (с пагинацией)
-router.get('requests', getAllArticleRequests);
+router.get('/requests', getAllArticleRequests);
 
 // Одобрение заявки на статью
-router.put('requests/approve/:id', approveArticleRequest);
+router.put('/requests/approve/:id', approveArticleRequest);
 
 // Отклонение заявки на статью
 router.put('/requests/reject/:id', rejectArticleRequest);
