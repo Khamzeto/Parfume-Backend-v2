@@ -7,6 +7,7 @@ import {
   deleteArticleRequest,
   getArticleRequestsByUserId,
   updateArticleRequest,
+  getApprovedArticleRequestsByUserId,
 } from '../controllers/articleController'; // Импорт контроллеров
 
 const router = Router();
