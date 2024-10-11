@@ -20,7 +20,7 @@ export const createArticleRequest = async (
       content,
       coverImage, // Сохраняем обложку статьи
       userId,
-      status: 'pending',
+      status: 'pending', // Устанавливаем статус на 'pending' при создании
     });
 
     await newArticleRequest.save();
@@ -169,6 +169,7 @@ export const getArticleRequestsByUserId = async (
     });
   }
 };
+
 // Обновление заявки на статью
 export const updateArticleRequest = async (
   req: Request,
@@ -184,19 +185,12 @@ export const updateArticleRequest = async (
       return;
     }
 
-    // Разрешаем редактирование только если статья находится на проверке
-    if (request.status !== 'pending') {
-      res
-        .status(400)
-        .json({ message: 'Редактирование разрешено только для заявок на проверке.' });
-      return;
-    }
-
-    // Обновляем поля заявки
+    // Обновляем поля заявки и изменяем статус на 'pending' при обновлении
     request.title = title || request.title;
     request.description = description || request.description;
     request.content = content || request.content;
     request.coverImage = coverImage || request.coverImage;
+    request.status = 'pending'; // Снова устанавливаем статус на 'pending'
 
     await request.save();
 
@@ -209,6 +203,7 @@ export const updateArticleRequest = async (
     });
   }
 };
+
 // Получение всех одобренных заявок на статьи по userId
 export const getApprovedArticleRequestsByUserId = async (
   req: Request,
@@ -243,6 +238,28 @@ export const getApprovedArticleRequestsByUserId = async (
     res.status(500).json({
       message:
         'Ошибка при получении одобренных заявок на статьи для данного пользователя.',
+      error: (err as Error).message,
+    });
+  }
+};
+
+// Получение заявки на статью по id
+export const getArticleRequestById = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const request = await ArticleRequest.findById(req.params.id);
+
+    if (!request) {
+      res.status(404).json({ message: 'Заявка не найдена.' });
+      return;
+    }
+
+    res.json(request);
+  } catch (err) {
+    res.status(500).json({
+      message: 'Ошибка при получении заявки на статью.',
       error: (err as Error).message,
     });
   }

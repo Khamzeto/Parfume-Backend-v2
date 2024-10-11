@@ -8,6 +8,7 @@ import {
   getArticleRequestsByUserId,
   updateArticleRequest,
   getApprovedArticleRequestsByUserId,
+  getArticleRequestById,
 } from '../controllers/articleController'; // Импорт контроллеров
 
 const router = Router();
@@ -32,4 +33,5 @@ router.get('/requests/user/:userId', getArticleRequestsByUserId);
 router.get('/requests/user/:userId/approved', getApprovedArticleRequestsByUserId);
 
 router.put('/requests/:id', updateArticleRequest);
+router.get('/requests/id/:id', getArticleRequestById);
 export default router;
