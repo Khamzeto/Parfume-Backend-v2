@@ -1,22 +1,50 @@
-import mongoose, { Document, Schema } from 'mongoose';
+// models/articleModel.ts
+import mongoose, { Schema, Document, Types } from 'mongoose';
 
-// Интерфейс для заявки на добавление статьи
-export interface IArticleRequest extends Document {
-  title: string;
-  description: string;
+export interface IComment {
+  _id: Types.ObjectId;
+  userId: Types.ObjectId;
+  username: string;
+  avatar?: string;
   content: string;
-  coverImage: string; // URL или base64 изображения обложки статьи
-  userId: mongoose.Types.ObjectId; // ID пользователя, отправившего статью
-  status: 'pending' | 'approved' | 'rejected';
+  createdAt: Date;
+  replies: ICommentReply[];
 }
 
-const articleRequestSchema: Schema = new Schema({
-  title: { type: String, required: true },
-  description: { type: String, required: true },
-  content: { type: String, required: true }, // Основное содержание статьи
-  coverImage: { type: String, required: false }, // Поле для обложки статьи
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }, // Поле для ID пользователя
-  status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' }, // Статус заявки
+export interface ICommentReply {
+  _id: Types.ObjectId;
+  userId: Types.ObjectId;
+  username: string;
+  avatar?: string;
+  content: string;
+  createdAt: Date;
+}
+
+const commentReplySchema = new Schema<ICommentReply>({
+  userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+  username: { type: String, required: true },
+  avatar: { type: String, required: false },
+  content: { type: String, required: true },
+  createdAt: { type: Date, default: Date.now },
 });
 
-export default mongoose.model<IArticleRequest>('ArticleRequest', articleRequestSchema);
+const commentSchema = new Schema<IComment>({
+  userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+  username: { type: String, required: true },
+  avatar: { type: String, required: false },
+  content: { type: String, required: true },
+  createdAt: { type: Date, default: Date.now },
+  replies: [commentReplySchema], // Поддержка ответов на комментарии
+});
+
+const articleSchema = new Schema({
+  title: { type: String, required: true },
+  description: { type: String, required: true },
+  content: { type: String, required: true },
+  coverImage: { type: String, required: false },
+  userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+  status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
+  comments: [commentSchema], // Комментарии
+});
+
+export default mongoose.model('ArticleRequest', articleSchema);
