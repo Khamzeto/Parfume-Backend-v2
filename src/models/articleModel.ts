@@ -1,4 +1,3 @@
-// models/articleModel.ts
 import mongoose, { Schema, Document, Types } from 'mongoose';
 
 export interface IComment {
@@ -45,6 +44,9 @@ const articleSchema = new Schema({
   userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
   comments: [commentSchema], // Комментарии
+  isPopular: { type: Boolean, default: false }, // Поле для статуса популярности
+  popularityScore: { type: Number, default: 0 }, // Поле для балла популярности
+  createdAt: { type: Date, default: Date.now }, // Время создания статьи
 });
 
 export default mongoose.model('ArticleRequest', articleSchema);

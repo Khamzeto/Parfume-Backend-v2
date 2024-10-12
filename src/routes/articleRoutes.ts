@@ -12,7 +12,11 @@ import {
   addCommentToArticle, // Контроллер для добавления комментария
   deleteCommentFromArticle, // Контроллер для удаления комментария
   addReplyToComment, // Контроллер для добавления ответа на комментарий
-  deleteReplyFromComment, // Контроллер для удаления ответа на комментарий
+  deleteReplyFromComment,
+  makeArticlePopular,
+  updatePopularityScore,
+  removePopularity,
+  getPopularArticles, // Контроллер для удаления ответа на комментарий
 } from '../controllers/articleController'; // Импорт контроллеров
 
 const router = Router();
@@ -56,5 +60,15 @@ router.delete(
   '/requests/:id/comments/:commentId/replies/:replyId',
   deleteReplyFromComment
 );
+router.post('/requests/:id/popular', makeArticlePopular);
+
+// Обновить балл популярности
+router.put('/requests/:id/popular', updatePopularityScore);
+
+// Убрать популярность
+router.put('/requests/:id/unpopular', removePopularity);
+
+// Получить все популярные статьи
+router.get('/requests/popular', getPopularArticles);
 
 export default router;

@@ -43,14 +43,21 @@ export const getAllArticleRequests = async (
   res: Response
 ): Promise<void> => {
   try {
-    const { page = 1, limit = 10 } = req.query;
+    const { page = 1, limit = 10, sortBy = 'createdAt', order = 'desc' } = req.query;
 
     const pageNumber = Number(page);
     const limitNumber = Number(limit);
     const skip = (pageNumber - 1) * limitNumber;
 
+    // Приведение sortBy к строке
+    const sortByField = typeof sortBy === 'string' ? sortBy : 'createdAt';
+
+    // Определение порядка сортировки
+    const sortOrder = order === 'asc' ? 1 : -1;
+
     const requests = await ArticleRequest.find()
       .populate('userId')
+      .sort({ [sortByField]: sortOrder }) // Убедимся, что sortByField — это строка
       .skip(skip)
       .limit(limitNumber);
 
@@ -441,6 +448,94 @@ export const deleteReplyFromComment = async (
   } catch (err) {
     res.status(500).json({
       message: 'Ошибка при удалении ответа на комментарий.',
+      error: (err as Error).message,
+    });
+  }
+};
+// Сделать статью популярной и установить балл популярности
+export const makeArticlePopular = async (req: Request, res: Response): Promise<void> => {
+  const { id } = req.params;
+  const { score } = req.body;
+
+  try {
+    const article = await ArticleRequest.findById(id);
+    if (!article) {
+      res.status(404).json({ message: 'Статья не найдена.' });
+      return;
+    }
+
+    article.isPopular = true;
+    article.popularityScore = score;
+    await article.save();
+
+    res.json({ message: 'Статья сделана популярной с баллом популярности.', article });
+  } catch (err) {
+    res.status(500).json({
+      message: 'Ошибка при установке популярности статьи.',
+      error: (err as Error).message,
+    });
+  }
+};
+// Изменение балла популярности статьи
+export const updatePopularityScore = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const { id } = req.params;
+  const { score } = req.body;
+
+  try {
+    const article = await ArticleRequest.findById(id);
+    if (!article) {
+      res.status(404).json({ message: 'Статья не найдена.' });
+      return;
+    }
+
+    article.popularityScore = score;
+    await article.save();
+
+    res.json({ message: 'Балл популярности обновлен.', article });
+  } catch (err) {
+    res.status(500).json({
+      message: 'Ошибка при обновлении балла популярности статьи.',
+      error: (err as Error).message,
+    });
+  }
+};
+// Убрать популярность со статьи
+export const removePopularity = async (req: Request, res: Response): Promise<void> => {
+  const { id } = req.params;
+
+  try {
+    const article = await ArticleRequest.findById(id);
+    if (!article) {
+      res.status(404).json({ message: 'Статья не найдена.' });
+      return;
+    }
+
+    article.isPopular = false;
+    article.popularityScore = 0;
+    await article.save();
+
+    res.json({ message: 'Популярность статьи убрана.', article });
+  } catch (err) {
+    res.status(500).json({
+      message: 'Ошибка при удалении популярности статьи.',
+      error: (err as Error).message,
+    });
+  }
+};
+// Получить все популярные статьи, отсортированные по баллу популярности
+export const getPopularArticles = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const popularArticles = await ArticleRequest.find({ isPopular: true })
+      .sort({ popularityScore: -1 }) // Сортировка по баллу популярности по убыванию
+      .exec();
+
+    res.json(popularArticles);
+  } catch (err) {
+    res.status(500).json({
+      message: 'Ошибка при получении популярных статей.',
       error: (err as Error).message,
     });
   }
