@@ -42,7 +42,6 @@ const newsSchema = new Schema({
   content: { type: String, required: true },
   coverImage: { type: String, required: false },
   userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-  status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
   comments: [commentSchema], // Комментарии
   isPopular: { type: Boolean, default: false },
   popularityScore: { type: Number, default: 0 },

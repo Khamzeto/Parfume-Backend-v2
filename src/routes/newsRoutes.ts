@@ -2,8 +2,6 @@ import { Router } from 'express';
 import {
   createNewsRequest,
   getAllNewsRequests,
-  approveNewsRequest,
-  rejectNewsRequest,
   deleteNewsRequest,
   getNewsRequestsByUserId,
   updateNewsRequest,
@@ -22,26 +20,23 @@ const router = Router();
 // Создание заявки на добавление новости
 router.post('/requests', createNewsRequest);
 
-// Получение всех заявок на добавление новостей (с пагинацией и сортировкой)
+// Получение всех новостей (с пагинацией и сортировкой)
 router.get('/requests', getAllNewsRequests);
 
-// Одобрение заявки на добавление новости
-router.put('/requests/approve/:id', approveNewsRequest);
-
-// Отклонение заявки на добавление новости
-router.put('/requests/reject/:id', rejectNewsRequest);
-
-// Удаление заявки на новость
+// Удаление новости
 router.delete('/requests/:id', deleteNewsRequest);
 
-// Получение всех заявок пользователя по userId
+// Получение всех новостей пользователя по userId
 router.get('/requests/user/:userId', getNewsRequestsByUserId);
 
-// Обновление заявки на новость
+// Обновление новости
 router.put('/requests/:id', updateNewsRequest);
 
-// Получение популярной новости по id
-router.get('/requests/id/:id', getPopularNews);
+// Получение всех популярных новостей
+router.get('/popular', getPopularNews);
+
+// Получение конкретной новости по id
+router.get('/requests/id/:id', getAllNewsRequests);
 
 // Добавление комментария к новости
 router.post('/requests/:id/comments', addCommentToNews);
@@ -66,8 +61,5 @@ router.put('/requests/:id/popular', updatePopularityScore);
 
 // Убрать популярность с новости
 router.put('/requests/:id/unpopular', removePopularity);
-
-// Получение всех популярных новостей
-router.get('/popular', getPopularNews);
 
 export default router;

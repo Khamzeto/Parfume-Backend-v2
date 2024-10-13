@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import mongoose from 'mongoose';
 import NewsRequest, { IComment } from '../models/newsModel'; // Модель и интерфейсы
 
-// Создание заявки на добавление новости
+// Создание новости
 export const createNewsRequest = async (req: Request, res: Response): Promise<void> => {
   const { title, description, content, coverImage, userId } = req.body;
 
@@ -18,23 +18,22 @@ export const createNewsRequest = async (req: Request, res: Response): Promise<vo
       content,
       coverImage,
       userId: new mongoose.Types.ObjectId(userId),
-      status: 'pending',
     });
 
     await newNewsRequest.save();
     res.status(201).json({
-      message: 'Заявка на добавление новости создана и отправлена на рассмотрение.',
+      message: 'Новость создана.',
     });
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : 'Неизвестная ошибка';
     res.status(500).json({
-      message: 'Ошибка при создании заявки на новость.',
+      message: 'Ошибка при создании новости.',
       error: errorMessage,
     });
   }
 };
 
-// Получение всех заявок на добавление новости
+// Получение всех новостей
 export const getAllNewsRequests = async (req: Request, res: Response): Promise<void> => {
   try {
     const { page = 1, limit = 10, sortBy = 'createdAt', order = 'desc' } = req.query;
@@ -62,67 +61,25 @@ export const getAllNewsRequests = async (req: Request, res: Response): Promise<v
     });
   } catch (err) {
     res.status(500).json({
-      message: 'Ошибка при получении заявок на новости.',
+      message: 'Ошибка при получении новостей.',
       error: (err as Error).message,
     });
   }
 };
 
-// Одобрение заявки на новость
-export const approveNewsRequest = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const request = await NewsRequest.findById(req.params.id);
-    if (!request) {
-      res.status(404).json({ message: 'Заявка не найдена.' });
-      return;
-    }
-
-    request.status = 'approved';
-    await request.save();
-
-    res.json({ message: 'Заявка одобрена и новость опубликована.' });
-  } catch (err) {
-    res.status(500).json({
-      message: 'Ошибка при одобрении заявки на новость.',
-      error: (err as Error).message,
-    });
-  }
-};
-
-// Отклонение заявки на новость
-export const rejectNewsRequest = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const request = await NewsRequest.findById(req.params.id);
-    if (!request) {
-      res.status(404).json({ message: 'Заявка не найдена.' });
-      return;
-    }
-
-    request.status = 'rejected';
-    await request.save();
-
-    res.json({ message: 'Заявка отклонена.' });
-  } catch (err) {
-    res.status(500).json({
-      message: 'Ошибка при отклонении заявки на новость.',
-      error: (err as Error).message,
-    });
-  }
-};
-
-// Удаление заявки на новость
+// Удаление новости
 export const deleteNewsRequest = async (req: Request, res: Response): Promise<void> => {
   try {
     const request = await NewsRequest.findByIdAndDelete(req.params.id);
     if (!request) {
-      res.status(404).json({ message: 'Заявка не найдена.' });
+      res.status(404).json({ message: 'Новость не найдена.' });
       return;
     }
 
-    res.json({ message: 'Заявка удалена.' });
+    res.json({ message: 'Новость удалена.' });
   } catch (err) {
     res.status(500).json({
-      message: 'Ошибка при удалении заявки на новость.',
+      message: 'Ошибка при удалении новости.',
       error: (err as Error).message,
     });
   }
@@ -164,7 +121,7 @@ export const getNewsRequestsByUserId = async (
   }
 };
 
-// Обновление заявки на новость
+// Обновление новости
 export const updateNewsRequest = async (req: Request, res: Response): Promise<void> => {
   const { title, description, content, coverImage } = req.body;
 
@@ -172,7 +129,7 @@ export const updateNewsRequest = async (req: Request, res: Response): Promise<vo
     const request = await NewsRequest.findById(req.params.id);
 
     if (!request) {
-      res.status(404).json({ message: 'Заявка не найдена.' });
+      res.status(404).json({ message: 'Новость не найдена.' });
       return;
     }
 
@@ -180,15 +137,14 @@ export const updateNewsRequest = async (req: Request, res: Response): Promise<vo
     request.description = description || request.description;
     request.content = content || request.content;
     request.coverImage = coverImage || request.coverImage;
-    request.status = 'pending';
 
     await request.save();
 
-    res.json({ message: 'Заявка обновлена.' });
+    res.json({ message: 'Новость обновлена.' });
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : 'Неизвестная ошибка';
     res.status(500).json({
-      message: 'Ошибка при обновлении заявки на новость.',
+      message: 'Ошибка при обновлении новости.',
       error: errorMessage,
     });
   }
