@@ -255,3 +255,47 @@ export const removeFromCollection = async (
     return res.status(500).json({ msg: 'Ошибка сервера', error: err.message });
   }
 };
+export const assignRole = async (req: Request, res: Response): Promise<void> => {
+  const { userId, role } = req.body;
+
+  try {
+    const user = await User.findById(userId);
+    if (!user) {
+      res.status(404).json({ message: 'Пользователь не найден.' });
+      return;
+    }
+
+    // Добавляем роль, если её еще нет
+    if (!user.roles.includes(role)) {
+      user.roles.push(role);
+    }
+
+    await user.save();
+    res.status(200).json({ message: 'Роль успешно назначена.' });
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Неизвестная ошибка';
+    res.status(500).json({ message: 'Ошибка при назначении роли.', error: errorMessage });
+  }
+};
+
+// Удаление роли у пользователя
+export const removeRole = async (req: Request, res: Response): Promise<void> => {
+  const { userId, role } = req.body;
+
+  try {
+    const user = await User.findById(userId);
+    if (!user) {
+      res.status(404).json({ message: 'Пользователь не найден.' });
+      return;
+    }
+
+    // Удаляем роль, если она существует
+    user.roles = user.roles.filter(r => r !== role);
+
+    await user.save();
+    res.status(200).json({ message: 'Роль успешно удалена.' });
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Неизвестная ошибка';
+    res.status(500).json({ message: 'Ошибка при удалении роли.', error: errorMessage });
+  }
+};

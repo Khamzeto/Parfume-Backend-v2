@@ -14,11 +14,12 @@ import {
   removePopularity,
   getPopularNews,
 } from '../controllers/newsController'; // Импортируем контроллер новостей
+import { checkRole } from '../middleware/roleMiddleware';
 
 const router = Router();
 
 // Создание заявки на добавление новости
-router.post('/requests', createNewsRequest);
+router.post('/requests', checkRole(['admin', 'editor']), createNewsRequest);
 
 // Получение всех новостей (с пагинацией и сортировкой)
 router.get('/requests', getAllNewsRequests);

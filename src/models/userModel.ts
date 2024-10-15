@@ -8,6 +8,7 @@ export interface IUser extends Document {
   vkId?: string;
   googleId?: string;
   createdAt: Date;
+  roles: string[];
   wishlist: string[]; // Массив строк для ID парфюмов
   perfumeCollection: string[]; // Массив строк для ID парфюмов, которые у пользователя есть
   isValidPassword(password: string): Promise<boolean>;
@@ -28,6 +29,7 @@ const UserSchema: Schema<IUser> = new Schema({
   password: {
     type: String,
   },
+  roles: { type: [String], default: ['user'] },
   vkId: {
     type: String,
     unique: true,

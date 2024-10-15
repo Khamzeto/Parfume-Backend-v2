@@ -10,9 +10,12 @@ import {
   logout,
   getUsers,
   getUserById,
+  assignRole,
+  removeRole,
 } from '../controllers/authController';
 import jwt from 'jsonwebtoken';
 import { jwtSecret } from '../config';
+import { checkRole } from '../middleware/roleMiddleware';
 
 const router = express.Router();
 
@@ -21,7 +24,11 @@ interface AuthRequest extends Request {
   user?: any; // Свойство 'user' теперь опционально
 }
 
-// Регистрация пользователя
+router.post('/assign-role', checkRole(['editor']), assignRole);
+
+// Маршрут для удаления роли (только для админов)
+router.post('/remove-role', checkRole(['editor']), removeRole);
+
 router.post(
   '/register',
   [
