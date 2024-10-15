@@ -7,10 +7,11 @@ export interface IUser extends Document {
   password?: string;
   vkId?: string;
   googleId?: string;
+  avatar?: string; // Avatar field added
   createdAt: Date;
   roles: string[];
-  wishlist: string[]; // Массив строк для ID парфюмов
-  perfumeCollection: string[]; // Массив строк для ID парфюмов, которые у пользователя есть
+  wishlist: string[]; // Array for perfume IDs
+  perfumeCollection: string[]; // Array for perfume IDs user owns
   isValidPassword(password: string): Promise<boolean>;
 }
 
@@ -29,7 +30,10 @@ const UserSchema: Schema<IUser> = new Schema({
   password: {
     type: String,
   },
-  roles: { type: [String], default: ['user'] },
+  roles: {
+    type: [String],
+    default: ['user'],
+  },
   vkId: {
     type: String,
     unique: true,
@@ -40,21 +44,24 @@ const UserSchema: Schema<IUser> = new Schema({
     unique: true,
     sparse: true,
   },
+  avatar: {
+    type: String, // Avatar field to store the URL or path of the image
+  },
   createdAt: {
     type: Date,
     default: Date.now,
   },
   wishlist: {
-    type: [String], // Массив строк для хранения ID парфюмов, которые пользователь хочет
+    type: [String],
     default: [],
   },
   perfumeCollection: {
-    type: [String], // Массив строк для хранения ID парфюмов, которые у пользователя есть
+    type: [String],
     default: [],
   },
 });
 
-// Хэширование пароля перед сохранением
+// Hashing password before saving
 UserSchema.pre<IUser>('save', async function (next) {
   if (!this.isModified('password') || !this.password) {
     return next();
@@ -69,7 +76,7 @@ UserSchema.pre<IUser>('save', async function (next) {
   }
 });
 
-// Метод для проверки пароля
+// Method to validate password
 UserSchema.methods.isValidPassword = async function (password: string): Promise<boolean> {
   try {
     if (!this.password) return false;

@@ -12,6 +12,7 @@ import {
   getUserById,
   assignRole,
   removeRole,
+  updateUser,
 } from '../controllers/authController';
 import jwt from 'jsonwebtoken';
 import { jwtSecret } from '../config';
@@ -51,7 +52,7 @@ router.post(
 
 // Выход
 router.get('/logout', logout);
-
+router.put('/change/:id', updateUser);
 // Аутентификация через ВКонтакте
 router.get('/vkontakte', passport.authenticate('vkontakte', { session: false }));
 

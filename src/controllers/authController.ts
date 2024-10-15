@@ -118,22 +118,34 @@ export const getUserById = async (req: Request, res: Response): Promise<Response
 
 // Обновление данных пользователя
 export const updateUser = async (req: Request, res: Response): Promise<Response> => {
-  const { username, email } = req.body;
+  const { username, email, avatar, roles } = req.body;
+  const userId = req.params.id;
 
   try {
-    const user: IUser | null = await User.findById(req.params.id);
+    const user: IUser | null = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ msg: 'Пользователь не найден' });
     }
 
-    // Обновляем данные пользователя
+    // Update fields if provided
     user.username = username || user.username;
     user.email = email || user.email;
+    user.avatar = avatar || user.avatar; // Update avatar
+    if (roles) {
+      user.roles = Array.isArray(roles) ? roles : [roles]; // Update roles if provided
+    }
+
     await user.save();
 
     return res.status(200).json({
       msg: 'Данные пользователя обновлены',
-      user: { id: user._id, username: user.username, email: user.email },
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        avatar: user.avatar,
+        roles: user.roles,
+      },
     });
   } catch (err: any) {
     return res.status(500).json({ msg: 'Ошибка сервера', error: err.message });
