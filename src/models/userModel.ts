@@ -1,5 +1,3 @@
-// models/User.ts
-
 import mongoose, { Document, Schema } from 'mongoose';
 import bcrypt from 'bcrypt';
 
@@ -9,7 +7,11 @@ export interface IUser extends Document {
   password?: string;
   vkId?: string;
   googleId?: string;
+  avatar?: string; // Avatar field added
   createdAt: Date;
+  roles: string[];
+  wishlist: string[]; // Array for perfume IDs
+  perfumeCollection: string[]; // Array for perfume IDs user owns
   isValidPassword(password: string): Promise<boolean>;
 }
 
@@ -21,12 +23,16 @@ const UserSchema: Schema<IUser> = new Schema({
   email: {
     type: String,
     unique: true,
-    sparse: true, // позволяет уникальные значения или null
+    sparse: true,
     lowercase: true,
     trim: true,
   },
   password: {
     type: String,
+  },
+  roles: {
+    type: [String],
+    default: ['user'],
   },
   vkId: {
     type: String,
@@ -38,13 +44,24 @@ const UserSchema: Schema<IUser> = new Schema({
     unique: true,
     sparse: true,
   },
+  avatar: {
+    type: String, // Avatar field to store the URL or path of the image
+  },
   createdAt: {
     type: Date,
     default: Date.now,
   },
+  wishlist: {
+    type: [String],
+    default: [],
+  },
+  perfumeCollection: {
+    type: [String],
+    default: [],
+  },
 });
 
-// Хэширование пароля перед сохранением
+// Hashing password before saving
 UserSchema.pre<IUser>('save', async function (next) {
   if (!this.isModified('password') || !this.password) {
     return next();
@@ -59,7 +76,7 @@ UserSchema.pre<IUser>('save', async function (next) {
   }
 });
 
-// Метод для проверки пароля
+// Method to validate password
 UserSchema.methods.isValidPassword = async function (password: string): Promise<boolean> {
   try {
     if (!this.password) return false;

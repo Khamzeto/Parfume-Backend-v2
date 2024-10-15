@@ -1,9 +1,9 @@
 // controllers/authController.ts
 
 import { Request, Response, NextFunction } from 'express';
-import User, { IUser } from '../models/User';
+import User, { IUser } from '../models/userModel';
 import jwt from 'jsonwebtoken';
-import { jwtSecret } from '../config';
+import { jwtSecret } from '../config/index';
 import { validationResult } from 'express-validator';
 import passport from 'passport';
 
@@ -72,7 +72,13 @@ export const login = async (
         return res.json({
           msg: 'Успешный вход',
           token,
-          user: { id: user._id, username: user.username, email: user.email },
+          user: {
+            id: user._id,
+            username: user.username,
+            email: user.email,
+            wishlist: user.wishlist,
+            perfumeCollection: user.perfumeCollection,
+          },
         });
       });
     }
@@ -87,4 +93,221 @@ export const logout = (req: Request, res: Response): void => {
     }
     res.json({ msg: 'Вы вышли из системы' });
   });
+};
+export const getUsers = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const users: IUser[] = await User.find();
+    return res.status(200).json(users);
+  } catch (err: any) {
+    return res.status(500).json({ msg: 'Ошибка сервера', error: err.message });
+  }
+};
+
+// Получение одного пользователя по id
+export const getUserById = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const user: IUser | null = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ msg: 'Пользователь не найден' });
+    }
+    return res.status(200).json(user);
+  } catch (err: any) {
+    return res.status(500).json({ msg: 'Ошибка сервера', error: err.message });
+  }
+};
+
+// Обновление данных пользователя
+export const updateUser = async (req: Request, res: Response): Promise<Response> => {
+  const { username, email, avatar, roles } = req.body;
+  const userId = req.params.id;
+
+  try {
+    const user: IUser | null = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ msg: 'Пользователь не найден' });
+    }
+
+    // Update fields if provided
+    user.username = username || user.username;
+    user.email = email || user.email;
+    user.avatar = avatar || user.avatar; // Update avatar
+    if (roles) {
+      user.roles = Array.isArray(roles) ? roles : [roles]; // Update roles if provided
+    }
+
+    await user.save();
+
+    return res.status(200).json({
+      msg: 'Данные пользователя обновлены',
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        avatar: user.avatar,
+        roles: user.roles,
+      },
+    });
+  } catch (err: any) {
+    return res.status(500).json({ msg: 'Ошибка сервера', error: err.message });
+  }
+};
+
+// Удаление пользователя
+export const deleteUser = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const user: IUser | null = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ msg: 'Пользователь не найден' });
+    }
+
+    // Удаление пользователя с использованием deleteOne
+    await User.deleteOne({ _id: req.params.id });
+
+    return res.status(200).json({ msg: 'Пользователь удален' });
+  } catch (err: any) {
+    return res.status(500).json({ msg: 'Ошибка сервера', error: err.message });
+  }
+};
+export const addToWishlist = async (req: Request, res: Response): Promise<Response> => {
+  const userId = req.params.id;
+  const { perfumeId } = req.body;
+
+  try {
+    const user: IUser | null = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ msg: 'Пользователь не найден' });
+    }
+
+    // Проверка, есть ли парфюм уже в списке "Я хочу"
+    if (!user.wishlist.includes(perfumeId)) {
+      user.wishlist.push(perfumeId); // Добавление парфюма в список
+      await user.save();
+    }
+
+    return res
+      .status(200)
+      .json({ msg: 'Парфюм добавлен в список желаемого', wishlist: user.wishlist });
+  } catch (err: any) {
+    return res.status(500).json({ msg: 'Ошибка сервера', error: err.message });
+  }
+};
+
+// Удаление парфюма из "Я хочу"
+export const removeFromWishlist = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  const userId = req.params.id;
+  const { perfumeId } = req.body;
+
+  try {
+    const user: IUser | null = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ msg: 'Пользователь не найден' });
+    }
+
+    user.wishlist = user.wishlist.filter((id: string) => id !== perfumeId); // Удаление парфюма
+    await user.save();
+
+    return res
+      .status(200)
+      .json({ msg: 'Парфюм удалён из списка желаемого', wishlist: user.wishlist });
+  } catch (err: any) {
+    return res.status(500).json({ msg: 'Ошибка сервера', error: err.message });
+  }
+};
+
+// Добавление парфюма в коллекцию
+export const addToCollection = async (req: Request, res: Response): Promise<Response> => {
+  const userId = req.params.id;
+  const { perfumeId } = req.body;
+
+  try {
+    const user: IUser | null = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ msg: 'Пользователь не найден' });
+    }
+
+    if (!user.perfumeCollection.includes(perfumeId)) {
+      user.perfumeCollection.push(perfumeId); // Добавление парфюма в коллекцию
+      await user.save();
+    }
+
+    return res
+      .status(200)
+      .json({ msg: 'Парфюм добавлен в коллекцию', collection: user.perfumeCollection });
+  } catch (err: any) {
+    return res.status(500).json({ msg: 'Ошибка сервера', error: err.message });
+  }
+};
+
+// Удаление парфюма из коллекции
+export const removeFromCollection = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  const userId = req.params.id;
+  const { perfumeId } = req.body;
+
+  try {
+    const user: IUser | null = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ msg: 'Пользователь не найден' });
+    }
+
+    user.perfumeCollection = user.perfumeCollection.filter(
+      (id: string) => id !== perfumeId
+    ); // Удаление парфюма
+    await user.save();
+
+    return res
+      .status(200)
+      .json({ msg: 'Парфюм удалён из коллекции', collection: user.perfumeCollection });
+  } catch (err: any) {
+    return res.status(500).json({ msg: 'Ошибка сервера', error: err.message });
+  }
+};
+export const assignRole = async (req: Request, res: Response): Promise<void> => {
+  const { userId, role } = req.body;
+
+  try {
+    const user = await User.findById(userId);
+    if (!user) {
+      res.status(404).json({ message: 'Пользователь не найден.' });
+      return;
+    }
+
+    // Добавляем роль, если её еще нет
+    if (!user.roles.includes(role)) {
+      user.roles.push(role);
+    }
+
+    await user.save();
+    res.status(200).json({ message: 'Роль успешно назначена.' });
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Неизвестная ошибка';
+    res.status(500).json({ message: 'Ошибка при назначении роли.', error: errorMessage });
+  }
+};
+
+// Удаление роли у пользователя
+export const removeRole = async (req: Request, res: Response): Promise<void> => {
+  const { userId, role } = req.body;
+
+  try {
+    const user = await User.findById(userId);
+    if (!user) {
+      res.status(404).json({ message: 'Пользователь не найден.' });
+      return;
+    }
+
+    // Удаляем роль, если она существует
+    user.roles = user.roles.filter(r => r !== role);
+
+    await user.save();
+    res.status(200).json({ message: 'Роль успешно удалена.' });
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Неизвестная ошибка';
+    res.status(500).json({ message: 'Ошибка при удалении роли.', error: errorMessage });
+  }
 };
