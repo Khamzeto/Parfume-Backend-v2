@@ -24,7 +24,7 @@ interface AuthRequest extends Request {
   user?: any; // Свойство 'user' теперь опционально
 }
 
-router.post('/assign-role', checkRole(['editor']), assignRole);
+router.post('/assign-role', assignRole);
 
 // Маршрут для удаления роли (только для админов)
 router.post('/remove-role', checkRole(['editor']), removeRole);
