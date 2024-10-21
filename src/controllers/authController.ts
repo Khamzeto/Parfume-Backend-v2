@@ -5,7 +5,6 @@ import User, { IUser } from '../models/userModel';
 import jwt from 'jsonwebtoken';
 import { jwtSecret } from '../config/index';
 import { validationResult } from 'express-validator';
-import passport from 'passport';
 
 export const register = async (req: Request, res: Response): Promise<Response> => {
   // Проверка валидации
@@ -44,45 +43,38 @@ export const login = async (
   req: Request,
   res: Response,
   next: NextFunction
-): Promise<void> => {
+): Promise<Response> => {
   // Проверка валидации
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    res.status(400).json({ errors: errors.array() });
-    return;
+    return res.status(400).json({ errors: errors.array() });
   }
 
-  passport.authenticate(
-    'local',
-    { session: false },
-    (err: any, user: IUser, info: any) => {
-      if (err || !user) {
-        return res
-          .status(400)
-          .json({ msg: info ? info.message : 'Не удалось авторизоваться' });
-      }
+  try {
+    const { email, password } = req.body;
+    const user: IUser | null = await User.findOne({ email });
 
-      req.login(user, { session: false }, err => {
-        if (err) {
-          res.status(500).json({ msg: 'Ошибка сервера' });
-          return;
-        }
-        // Создание JWT-токена
-        const token = jwt.sign({ id: user._id }, jwtSecret, { expiresIn: '1h' });
-        return res.json({
-          msg: 'Успешный вход',
-          token,
-          user: {
-            id: user._id,
-            username: user.username,
-            email: user.email,
-            wishlist: user.wishlist,
-            perfumeCollection: user.perfumeCollection,
-          },
-        });
-      });
+    if (!user || user.password !== password) {
+      // Элементарная проверка пароля
+      return res.status(400).json({ msg: 'Неправильный email или пароль' });
     }
-  )(req, res, next);
+
+    // Создание JWT-токена
+    const token = jwt.sign({ id: user._id }, jwtSecret, { expiresIn: '1h' });
+    return res.json({
+      msg: 'Успешный вход',
+      token,
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        wishlist: user.wishlist,
+        perfumeCollection: user.perfumeCollection,
+      },
+    });
+  } catch (err: any) {
+    return res.status(500).json({ msg: 'Ошибка сервера', error: err.message });
+  }
 };
 
 export const logout = (req: Request, res: Response): void => {
