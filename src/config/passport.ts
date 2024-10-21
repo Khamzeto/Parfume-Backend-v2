@@ -15,7 +15,7 @@ export default function (passport: passport.PassportStatic) {
   passport.serializeUser((user: any, done) => {
     done(null, user.id);
   });
-
+  //dsadsa
   // Десериализация пользователя
   passport.deserializeUser((id, done) => {
     User.findById(id, (err: any, user: IUser) => {
