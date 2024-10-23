@@ -1,4 +1,3 @@
-// /src/routes/perfumeRoutes.ts
 import express from 'express';
 import {
   getPerfumeById,
@@ -16,19 +15,29 @@ import {
 } from '../controllers/perfumeController';
 
 const router = express.Router();
+
+// Define specific routes first
+router.get('/search', searchPerfumes); // Search perfumes
+router.get('/searchBrands', searchBrands); // Search brands
+router.get('/similar', getPerfumesWithSimilarAndSearch); // Get perfumes with similar perfumes
+
+// Route for uploading gallery images
+router.post('/gallery/:perfumeId', uploadGalleryImages);
+router.get('/gallery/:perfumeId', getGalleryImages); // Get gallery images
+
+// Route to retrieve perfumes by multiple IDs
+router.post('/by-ids', getPerfumesByIds);
+
+// Route for translating and updating all fields
 router.put('/translate-all', translateAndUpdateAllFields);
 
-router.get('/', getAllPerfumes);
-router.get('/search', searchPerfumes);
-router.get('/searchBrands', searchBrands);
-router.get('/:perfume_id', getPerfumeById);
-router.post('/gallery/:perfumeId', uploadGalleryImages);
-router.post('/by-ids', getPerfumesByIds);
-router.get('/similar', getPerfumesWithSimilarAndSearch);
-// Роут для получения галереи изображений
-router.get('/gallery/:perfumeId', getGalleryImages);
-router.post('/', createPerfume);
-router.put('/:id', updatePerfume);
-router.delete('/:id', deletePerfume);
+// General routes for all perfumes
+router.get('/', getAllPerfumes); // Get all perfumes
+router.post('/', createPerfume); // Create new perfume
+
+// Generic routes last (to prevent conflicts)
+router.get('/:perfume_id', getPerfumeById); // Get perfume by ID
+router.put('/:id', updatePerfume); // Update perfume by ID
+router.delete('/:id', deletePerfume); // Delete perfume by ID
 
 export default router;
