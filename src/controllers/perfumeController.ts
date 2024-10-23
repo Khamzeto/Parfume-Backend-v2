@@ -510,16 +510,28 @@ export const getPerfumesWithSimilarAndSearch = async (
     // Fetch perfumes with applied search and filters
     const perfumes = await Perfume.find(searchFilters, 'name gender similar_perfumes')
       .skip(skip)
-      .limit(limitNumber);
+      .limit(limitNumber)
+      .lean(); // Use lean() to return plain JS objects
 
     // If no perfumes are found
     if (perfumes.length === 0) {
-      res
-        .status(404)
-        .json({
-          message: 'No perfumes found with similar perfumes or matching search criteria.',
-        });
+      res.status(404).json({
+        message: 'No perfumes found with similar perfumes or matching search criteria.',
+      });
       return;
+    }
+
+    // Fetch details for similar perfumes using the IDs from `similar_perfumes`
+    for (let perfume of perfumes) {
+      if (perfume.similar_perfumes && perfume.similar_perfumes.length > 0) {
+        const similarPerfumeDetails = await Perfume.find(
+          { perfume_id: { $in: perfume.similar_perfumes } },
+          'name perfume_id' // Fetch only the necessary fields (name, id)
+        ).lean();
+
+        // Add the details of similar perfumes in a new field without modifying the existing array
+        (perfume as any).similar_perfume_details = similarPerfumeDetails;
+      }
     }
 
     // Get the total count of matching perfumes for pagination
