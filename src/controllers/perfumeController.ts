@@ -471,3 +471,72 @@ export const getGalleryImages = async (req: Request, res: Response) => {
     res.status(500).json({ message: 'Ошибка получения изображений' });
   }
 };
+export const getPerfumesWithSimilarAndSearch = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { query = '', gender, page = 1, limit = 10 } = req.query;
+
+    // Normalize and transliterate the query string
+    const normalizedQuery = (query as string)
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, ''); // Normalize
+    const transliteratedQuery = tr(normalizedQuery.toLowerCase()); // Transliterate query
+
+    // Build search filters
+    const searchFilters: any = {
+      similar_perfumes: { $exists: true, $ne: [] }, // Ensure similar_perfumes is not empty
+      $or: [
+        { name: { $regex: normalizedQuery, $options: 'i' } }, // Search by name in original form
+        { brand: { $regex: normalizedQuery, $options: 'i' } }, // Search by brand in original form
+        { name: { $regex: transliteratedQuery, $options: 'i' } }, // Search by transliterated name
+        { brand: { $regex: transliteratedQuery, $options: 'i' } }, // Search by transliterated brand
+        { name_ru: { $regex: query, $options: 'i' } }, // Search by name in Russian
+        { brand_ru: { $regex: query, $options: 'i' } }, // Search by brand in Russian
+      ],
+    };
+
+    // Filter by gender if provided
+    if (gender) {
+      searchFilters.gender = gender;
+    }
+
+    // Pagination parameters
+    const pageNumber = Number(page);
+    const limitNumber = Number(limit);
+    const skip = (pageNumber - 1) * limitNumber;
+
+    // Fetch perfumes with applied search and filters
+    const perfumes = await Perfume.find(searchFilters, 'name gender similar_perfumes')
+      .skip(skip)
+      .limit(limitNumber);
+
+    // If no perfumes are found
+    if (perfumes.length === 0) {
+      res
+        .status(404)
+        .json({
+          message: 'No perfumes found with similar perfumes or matching search criteria.',
+        });
+      return;
+    }
+
+    // Get the total count of matching perfumes for pagination
+    const totalResults = await Perfume.countDocuments(searchFilters);
+    const totalPages = Math.ceil(totalResults / limitNumber);
+
+    // Respond with the list of perfumes and pagination details
+    res.json({
+      perfumes,
+      totalPages,
+      currentPage: pageNumber,
+      totalResults,
+    });
+  } catch (err) {
+    console.error(
+      `Error fetching perfumes with similar perfumes: ${(err as Error).message}`
+    );
+    res.status(500).json({ message: (err as Error).message });
+  }
+};
