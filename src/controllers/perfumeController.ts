@@ -486,7 +486,7 @@ export const getPerfumesWithSimilarAndSearch = async (
 
     // Build search filters
     const searchFilters: any = {
-      similar_perfumes: { $exists: true, $ne: [] }, // Ensure similar_perfumes is not empty
+      similar_perfumes: { $exists: true, $ne: [], $not: { $size: 0 } }, // Ensure similar_perfumes is not null or an empty array
       $or: [
         { name: { $regex: normalizedQuery, $options: 'i' } }, // Search by name in original form
         { brand: { $regex: normalizedQuery, $options: 'i' } }, // Search by brand in original form
