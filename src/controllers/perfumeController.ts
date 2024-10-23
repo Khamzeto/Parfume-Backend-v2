@@ -508,8 +508,11 @@ export const getPerfumesWithSimilarAndSearch = async (
     const limitNumber = Number(limit);
     const skip = (pageNumber - 1) * limitNumber;
 
-    // Fetch perfumes with applied search and filters
-    const perfumes = await Perfume.find(searchFilters, 'name gender similar_perfumes')
+    // Fetch perfumes with applied search and filters, but only select the necessary fields
+    const perfumes = await Perfume.find(
+      searchFilters,
+      'name gender similar_perfumes main_image brand type perfume_id'
+    )
       .skip(skip)
       .limit(limitNumber)
       .lean(); // Use lean() to return plain JS objects
@@ -517,7 +520,7 @@ export const getPerfumesWithSimilarAndSearch = async (
     // If no perfumes are found
     if (perfumes.length === 0) {
       res.status(404).json({
-        message: 'No perfumes found with similar perfumes or matching search criteria.',
+        message: 'Парфюмы не найдены по указанным критериям.',
       });
       return;
     }
@@ -527,7 +530,7 @@ export const getPerfumesWithSimilarAndSearch = async (
       if (perfume.similar_perfumes && perfume.similar_perfumes.length > 0) {
         const similarPerfumeDetails = await Perfume.find(
           { perfume_id: { $in: perfume.similar_perfumes } },
-          'name perfume_id' // Fetch only the necessary fields (name, id)
+          'name perfume_id main_image brand type' // Fetch only the necessary fields for similar perfumes
         ).lean();
 
         // Add the details of similar perfumes in a new field without modifying the existing array
@@ -548,7 +551,7 @@ export const getPerfumesWithSimilarAndSearch = async (
     });
   } catch (err) {
     console.error(
-      `Error fetching perfumes with similar perfumes: ${(err as Error).message}`
+      `Ошибка при получении парфюмов с похожими парфюмами: ${(err as Error).message}`
     );
     res.status(500).json({ message: (err as Error).message });
   }
