@@ -139,7 +139,9 @@ export const login = async (req: Request, res: Response): Promise<Response> => {
 
     // Логирование данных для отладки
     console.log('Оригинальный пароль при логине:', password);
+    console.log('Оригинальная длина пароля:', password.length);
     console.log('Хэшированный пароль из базы данных:', user.password);
+    console.log('Длина хэшированного пароля из базы данных:', user.password.length);
 
     // Сравниваем пароли
     const isMatch = await bcrypt.compare(password.trim(), user.password.trim());
