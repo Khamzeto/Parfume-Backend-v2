@@ -132,6 +132,11 @@ export const login = async (req: Request, res: Response): Promise<Response> => {
         .json({ msg: 'Аккаунт не активирован. Проверьте свою почту.' });
     }
 
+    // Проверяем, что пароль определён
+    if (!user.password) {
+      return res.status(400).json({ msg: 'Пароль отсутствует для этого пользователя' });
+    }
+
     // Логирование данных для отладки
     console.log('Оригинальный пароль при логине:', password);
     console.log('Хэшированный пароль из базы данных:', user.password);
