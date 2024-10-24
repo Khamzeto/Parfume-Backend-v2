@@ -65,6 +65,9 @@ const UserSchema: Schema<IUser> = new Schema({
     type: Boolean,
     default: false, // По умолчанию аккаунт не активирован
   },
+  activationCode: {
+    type: String, // Поле для хранения кода активации
+  },
 });
 
 // Hashing password before saving
