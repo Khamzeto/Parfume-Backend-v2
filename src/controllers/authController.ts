@@ -7,10 +7,10 @@ import User, { IUser } from '../models/userModel';
 
 // Настройка Nodemailer
 const transporter = nodemailer.createTransport({
-  service: 'gmail', // или другой SMTP-сервис
+  service: 'gmail',
   auth: {
-    user: 'your-email@gmail.com', // Ваш email
-    pass: 'your-password', // Ваш пароль
+    user: 'iimya266@gmail.com',
+    pass: 'ksnz zdqp uuyv dxmw',
   },
 });
 
