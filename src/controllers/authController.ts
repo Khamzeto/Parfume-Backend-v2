@@ -114,11 +114,7 @@ export const activateAccount = async (req: Request, res: Response): Promise<Resp
 };
 
 // Функция логина
-export const login = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<Response> => {
+export const login = async (req: Request, res: Response): Promise<Response> => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ errors: errors.array() });
@@ -145,12 +141,13 @@ export const login = async (
       return res.status(400).json({ msg: 'Пароль не задан для этого пользователя' });
     }
 
-    // Добавляем лог для проверки
+    // Логируем пароли для отладки
     console.log('Введенный пароль:', password);
     console.log('Хэшированный пароль из базы данных:', user.password);
 
     const isMatch = await bcrypt.compare(password, user.password);
 
+    // Логируем результат сравнения
     console.log('Результат сравнения паролей:', isMatch);
 
     if (!isMatch) {
