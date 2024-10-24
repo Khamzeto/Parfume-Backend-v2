@@ -303,6 +303,36 @@ export const getPerfumeById = async (req: Request, res: Response): Promise<void>
   }
 };
 
+export const getPerfumesByIds = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { perfumeIds } = req.body; // Ожидаем массив ID в теле запроса
+
+    // Проверяем, что perfumeIds - это массив
+    if (!Array.isArray(perfumeIds)) {
+      res
+        .status(400)
+        .json({ message: 'Invalid input. Expected an array of perfume IDs.' });
+      return;
+    }
+
+    // Поиск парфюмов по массиву ID
+    const perfumes = await Perfume.find({ perfume_id: { $in: perfumeIds } });
+
+    // Проверка на случай, если парфюмы не найдены
+    if (!perfumes.length) {
+      res.status(404).json({ message: 'No perfumes found for the provided IDs.' });
+      return;
+    }
+
+    // Возвращаем найденные парфюмы
+    res.json(perfumes);
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: `Error fetching perfumes: ${(err as Error).message}` });
+  }
+};
+
 // Получение всех парфюмов с сортировкой
 export const getAllPerfumes = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -389,6 +419,140 @@ export const deletePerfume = async (req: Request, res: Response): Promise<void> 
     }
     res.json({ message: 'Perfume deleted' });
   } catch (err) {
+    res.status(500).json({ message: (err as Error).message });
+  }
+};
+export const uploadGalleryImages = async (req: Request, res: Response) => {
+  const { perfumeId } = req.params;
+  const { images } = req.body; // Массив изображений в формате base64
+
+  if (!images || !Array.isArray(images) || images.length === 0) {
+    return res.status(400).json({ message: 'Нет изображений для загрузки' });
+  }
+
+  try {
+    // Поиск парфюма по ID
+    const perfume = await Perfume.findById(perfumeId);
+
+    if (!perfume) {
+      return res.status(404).json({ message: 'Парфюм не найден' });
+    }
+
+    // Добавление изображений в массив gallery_images
+    perfume.gallery_images = [...perfume.gallery_images, ...images];
+
+    // Сохранение обновленного парфюма
+    await perfume.save();
+
+    res.status(200).json({
+      message: 'Изображения успешно загружены',
+      gallery_images: perfume.gallery_images,
+    });
+  } catch (error) {
+    console.error('Ошибка загрузки изображений:', error);
+    res.status(500).json({ message: 'Ошибка загрузки изображений' });
+  }
+};
+export const getGalleryImages = async (req: Request, res: Response) => {
+  const { perfumeId } = req.params;
+
+  try {
+    // Поиск парфюма по ID
+    const perfume = await Perfume.findById(perfumeId);
+
+    if (!perfume) {
+      return res.status(404).json({ message: 'Парфюм не найден' });
+    }
+
+    // Возвращаем массив изображений из галереи
+    res.status(200).json({ gallery_images: perfume.gallery_images });
+  } catch (error) {
+    console.error('Ошибка получения изображений:', error);
+    res.status(500).json({ message: 'Ошибка получения изображений' });
+  }
+};
+export const getPerfumesWithSimilarAndSearch = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { query = '', gender, page = 1, limit = 10 } = req.query;
+
+    // Normalize and transliterate the query string
+    const normalizedQuery = (query as string)
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, ''); // Normalize
+    const transliteratedQuery = tr(normalizedQuery.toLowerCase()); // Transliterate query
+
+    // Build search filters
+    const searchFilters: any = {
+      // Ensure similar_perfumes is not null or an empty array
+      similar_perfumes: { $elemMatch: { $exists: true, $ne: null } },
+      $or: [
+        { name: { $regex: normalizedQuery, $options: 'i' } }, // Search by name in original form
+        { brand: { $regex: normalizedQuery, $options: 'i' } }, // Search by brand in original form
+        { name: { $regex: transliteratedQuery, $options: 'i' } }, // Search by transliterated name
+        { brand: { $regex: transliteratedQuery, $options: 'i' } }, // Search by transliterated brand
+        { name_ru: { $regex: query, $options: 'i' } }, // Search by name in Russian
+        { brand_ru: { $regex: query, $options: 'i' } }, // Search by brand in Russian
+      ],
+    };
+
+    // Filter by gender if provided
+    if (gender) {
+      searchFilters.gender = gender;
+    }
+
+    // Pagination parameters
+    const pageNumber = Number(page);
+    const limitNumber = Number(limit);
+    const skip = (pageNumber - 1) * limitNumber;
+
+    // Fetch perfumes with applied search and filters, but only select the necessary fields
+    const perfumes = await Perfume.find(
+      searchFilters,
+      'name gender similar_perfumes main_image brand type perfume_id'
+    )
+      .skip(skip)
+      .limit(limitNumber)
+      .lean(); // Use lean() to return plain JS objects
+
+    // If no perfumes are found
+    if (perfumes.length === 0) {
+      res.status(404).json({
+        message: 'Парфюмы не найдены по указанным критериям.',
+      });
+      return;
+    }
+
+    // Fetch details for similar perfumes using the IDs from `similar_perfumes`
+    for (let perfume of perfumes) {
+      if (perfume.similar_perfumes && perfume.similar_perfumes.length > 0) {
+        const similarPerfumeDetails = await Perfume.find(
+          { perfume_id: { $in: perfume.similar_perfumes } },
+          'name perfume_id main_image brand type' // Fetch only the necessary fields for similar perfumes
+        ).lean();
+
+        // Add the details of similar perfumes in a new field without modifying the existing array
+        (perfume as any).similar_perfume_details = similarPerfumeDetails;
+      }
+    }
+
+    // Get the total count of matching perfumes for pagination
+    const totalResults = await Perfume.countDocuments(searchFilters);
+    const totalPages = Math.ceil(totalResults / limitNumber);
+
+    // Respond with the list of perfumes and pagination details
+    res.json({
+      perfumes,
+      totalPages,
+      currentPage: pageNumber,
+      totalResults,
+    });
+  } catch (err) {
+    console.error(
+      `Ошибка при получении парфюмов с похожими парфюмами: ${(err as Error).message}`
+    );
     res.status(500).json({ message: (err as Error).message });
   }
 };

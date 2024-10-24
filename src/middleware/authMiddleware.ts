@@ -2,7 +2,7 @@
 
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { jwtSecret } from '../config';
+import { jwtSecret } from '../config/index';
 
 interface AuthRequest extends Request {
   user?: any;

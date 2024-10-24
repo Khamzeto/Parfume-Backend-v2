@@ -6,11 +6,20 @@ import brandRoutes from './src/routes/brandRoutes'; // Импорт маршру
 import noteRoutes from './src/routes/noteRoutes';
 import requestRoutes from './src/routes/requestRoutes';
 import authRoutes from './src/routes/authRoutes';
+import userRoutes from './src/routes/userRoutes';
+import galleryRoutes from './src/routes/galleryRoutes';
+import articleRoutes from './src/routes/articleRoutes';
+import newsRoutes from './src/routes/newsRoutes';
+import bodyParser from 'body-parser';
 import cors from 'cors';
+import passportConfig from './src/config/passport'; // Конфигурация passport
+import passport from 'passport'; // Подключение passport
+import dotenv from 'dotenv';
 
 const app: Application = express();
 const PORT = 3001;
-
+app.use(bodyParser.json({ limit: '10mb' }));
+app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }));
 // Подключение к MongoDB
 connectDB();
 
@@ -24,6 +33,9 @@ const allowedOrigins = [
   'http://172.20.10.5:3001',
   'http://81.29.136.136:3000',
 ];
+passportConfig(passport);
+dotenv.config();
+app.use(passport.initialize());
 
 // Настройка CORS с проверкой источника
 app.use(
@@ -53,7 +65,10 @@ app.use('/notes', noteRoutes);
 app.use('/brands', brandRoutes);
 app.use('/requests', requestRoutes);
 app.use('/auth', authRoutes);
-
+app.use('/users', userRoutes);
+app.use('/gallery', galleryRoutes);
+app.use('/article', articleRoutes);
+app.use('/news', newsRoutes);
 // Запуск сервера
 app.listen(PORT, () => {
   console.log(`Сервер запущен на http://localhost:${PORT}`);
