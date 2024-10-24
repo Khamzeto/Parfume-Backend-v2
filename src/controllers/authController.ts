@@ -35,6 +35,7 @@ export const register = async (req: Request, res: Response): Promise<Response> =
 
     // Хэширование пароля
     const hashedPassword = await bcrypt.hash(password, 10);
+    console.log(hashedPassword);
 
     // Генерация 4-значного кода активации
     const activationCode = Math.floor(1000 + Math.random() * 9000).toString();
