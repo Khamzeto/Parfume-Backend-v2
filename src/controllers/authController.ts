@@ -138,7 +138,14 @@ export const login = async (
       return res.status(400).json({ msg: 'Пароль не задан для этого пользователя' });
     }
 
+    // Добавляем лог для проверки
+    console.log('Введенный пароль:', password);
+    console.log('Хэшированный пароль из базы данных:', user.password);
+
     const isMatch = await bcrypt.compare(password, user.password);
+
+    console.log('Результат сравнения паролей:', isMatch);
+
     if (!isMatch) {
       return res.status(400).json({ msg: 'Неправильный email или пароль' });
     }
