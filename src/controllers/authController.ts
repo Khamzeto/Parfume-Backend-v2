@@ -33,12 +33,16 @@ export const register = async (req: Request, res: Response): Promise<Response> =
       return res.status(400).json({ msg: 'Пользователь с таким email уже существует' });
     }
 
+    // Логирование оригинального пароля перед хэшированием
+    console.log('Оригинальный пароль:', password);
+
     // Хэширование пароля
     const hashedPassword = await bcrypt.hash(password, 10);
-    console.log(hashedPassword);
+    console.log('Хэшированный пароль:', hashedPassword);
 
     // Генерация 4-значного кода активации
     const activationCode = Math.floor(1000 + Math.random() * 9000).toString();
+    console.log('Код активации:', activationCode);
 
     // Создание нового пользователя
     const newUser: IUser = new User({
@@ -49,6 +53,7 @@ export const register = async (req: Request, res: Response): Promise<Response> =
       activationCode, // Генерация 4-значного кода активации
     });
     await newUser.save();
+    console.log('Пользователь успешно зарегистрирован:', newUser);
 
     // Отправка кода активации на email
     const mailOptions = {
@@ -59,11 +64,13 @@ export const register = async (req: Request, res: Response): Promise<Response> =
     };
 
     await transporter.sendMail(mailOptions);
+    console.log('Код активации отправлен на email:', newUser.email);
 
     return res.status(201).json({
       msg: 'Пользователь зарегистрирован. Проверьте свою почту для активации аккаунта.',
     });
   } catch (err: any) {
+    console.error('Ошибка во время регистрации:', err.message);
     return res.status(500).json({ msg: 'Ошибка сервера', error: err.message });
   }
 };
