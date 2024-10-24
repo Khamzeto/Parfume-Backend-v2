@@ -137,17 +137,11 @@ export const login = async (req: Request, res: Response): Promise<Response> => {
     }
 
     // Проверка пароля
-    if (!user.password) {
-      return res.status(400).json({ msg: 'Пароль не задан для этого пользователя' });
-    }
+    console.log('Оригинальный пароль:', password);
+    console.log('Хэшированный пароль из базы:', user.password);
 
-    // Логируем пароли для отладки
-    console.log('Введенный пароль:', password);
-    console.log('Хэшированный пароль из базы данных:', user.password);
+    const isMatch = await bcrypt.compare(password.trim(), user.password.trim());
 
-    const isMatch = await bcrypt.compare(password, user.password);
-
-    // Логируем результат сравнения
     console.log('Результат сравнения паролей:', isMatch);
 
     if (!isMatch) {
