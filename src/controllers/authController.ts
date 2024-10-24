@@ -136,10 +136,16 @@ export const login = async (req: Request, res: Response): Promise<Response> => {
         .json({ msg: 'Аккаунт не активирован. Проверьте свою почту.' });
     }
 
-    // Проверка пароля
+    // Проверка наличия пароля
+    if (!user.password) {
+      return res.status(400).json({ msg: 'Пароль не задан для этого пользователя' });
+    }
+
+    // Логирование данных для отладки
     console.log('Оригинальный пароль:', password);
     console.log('Хэшированный пароль из базы:', user.password);
 
+    // Сравниваем пароли
     const isMatch = await bcrypt.compare(password.trim(), user.password.trim());
 
     console.log('Результат сравнения паролей:', isMatch);
