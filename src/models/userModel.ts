@@ -71,27 +71,5 @@ const UserSchema: Schema<IUser> = new Schema({
 });
 
 // Хэширование пароля перед сохранением
-UserSchema.pre<IUser>('save', async function (next) {
-  if (!this.isModified('password') || !this.password) {
-    return next();
-  }
-  try {
-    const hashedPassword = await argon2.hash(this.password.trim());
-    this.password = hashedPassword;
-    return next();
-  } catch (err: any) {
-    return next(err);
-  }
-});
-
-// Метод для проверки пароля
-UserSchema.methods.isValidPassword = async function (password: string): Promise<boolean> {
-  try {
-    if (!this.password) return false;
-    return await argon2.verify(this.password, password.trim());
-  } catch (err) {
-    throw err;
-  }
-};
 
 export default mongoose.model<IUser>('User', UserSchema);
