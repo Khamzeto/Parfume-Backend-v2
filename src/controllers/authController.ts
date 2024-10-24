@@ -83,11 +83,9 @@ export const activateAccount = async (req: Request, res: Response): Promise<Resp
     }
 
     if (!user.activationCode) {
-      return res
-        .status(400)
-        .json({
-          msg: 'Код активации отсутствует. Попробуйте зарегистрироваться заново.',
-        });
+      return res.status(400).json({
+        msg: 'Код активации отсутствует. Попробуйте зарегистрироваться заново.',
+      });
     }
 
     // Приведение к строке и удаление лишних пробелов
@@ -118,8 +116,9 @@ export const login = async (
     return res.status(400).json({ errors: errors.array() });
   }
 
+  const { email, password } = req.body;
+
   try {
-    const { email, password } = req.body;
     const user: IUser | null = await User.findOne({ email });
 
     if (!user) {
@@ -133,13 +132,17 @@ export const login = async (
         .json({ msg: 'Аккаунт не активирован. Проверьте свою почту.' });
     }
 
-    // Сравниваем пароли
-    const isMatch = await user.isValidPassword(password);
+    // Проверка пароля
+    if (!user.password) {
+      return res.status(400).json({ msg: 'Пароль не задан для этого пользователя' });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(400).json({ msg: 'Неправильный email или пароль' });
     }
 
-    // Создание JWT-токена
+    // Создание JWT токена
     const token = jwt.sign({ id: user._id }, jwtSecret, { expiresIn: '1h' });
 
     return res.json({
