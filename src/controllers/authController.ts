@@ -82,6 +82,14 @@ export const activateAccount = async (req: Request, res: Response): Promise<Resp
       return res.status(400).json({ msg: 'Аккаунт уже активирован' });
     }
 
+    if (!user.activationCode) {
+      return res
+        .status(400)
+        .json({
+          msg: 'Код активации отсутствует. Попробуйте зарегистрироваться заново.',
+        });
+    }
+
     // Приведение к строке и удаление лишних пробелов
     const trimmedActivationCode = activationCode.toString().trim();
 
