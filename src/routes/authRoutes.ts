@@ -42,14 +42,7 @@ router.post(
 );
 
 // Логин пользователя
-router.post(
-  '/login',
-  [
-    body('email', 'Введите корректный email').isEmail(),
-    body('password', 'Пароль обязателен').exists(),
-  ],
-  login
-);
+router.post('/login', login);
 router.post('/activate', activateAccount);
 
 // Выход
