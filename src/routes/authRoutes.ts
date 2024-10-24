@@ -50,7 +50,7 @@ router.post(
   ],
   login
 );
-router.get('/activate/:token', activateAccount);
+router.post('/activate', activateAccount);
 
 // Выход
 router.get('/logout', logout);
