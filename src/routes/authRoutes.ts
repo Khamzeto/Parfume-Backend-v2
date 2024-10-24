@@ -13,6 +13,7 @@ import {
   assignRole,
   removeRole,
   updateUser,
+  activateAccount,
 } from '../controllers/authController';
 import jwt from 'jsonwebtoken';
 import { jwtSecret } from '../config';
@@ -49,6 +50,7 @@ router.post(
   ],
   login
 );
+router.get('/activate/:token', activateAccount);
 
 // Выход
 router.get('/logout', logout);

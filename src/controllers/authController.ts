@@ -1,13 +1,24 @@
-// controllers/authController.ts
-
-import { Request, Response, NextFunction } from 'express';
-import User, { IUser } from '../models/userModel';
+import bcrypt from 'bcryptjs';
+import nodemailer from 'nodemailer';
 import jwt from 'jsonwebtoken';
-import { jwtSecret } from '../config/index';
+import { Request, Response, NextFunction } from 'express';
 import { validationResult } from 'express-validator';
+import User, { IUser } from '../models/userModel';
 
+// Настройка Nodemailer
+const transporter = nodemailer.createTransport({
+  service: 'gmail', // или другой SMTP-сервис
+  auth: {
+    user: 'your-email@gmail.com', // Ваш email
+    pass: 'your-password', // Ваш пароль
+  },
+});
+
+// Секрет для JWT
+const jwtSecret = process.env.JWT_SECRET || 'your-secret-key';
+
+// Функция регистрации
 export const register = async (req: Request, res: Response): Promise<Response> => {
-  // Проверка валидации
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ errors: errors.array() });
@@ -22,29 +33,72 @@ export const register = async (req: Request, res: Response): Promise<Response> =
       return res.status(400).json({ msg: 'Пользователь с таким email уже существует' });
     }
 
+    // Хэширование пароля
+    const hashedPassword = await bcrypt.hash(password, 10);
+
     // Создание нового пользователя
-    const newUser: IUser = new User({ username, email, password });
+    const newUser: IUser = new User({
+      username,
+      email,
+      password: hashedPassword, // Храним хэш пароля
+      isActivated: false, // Поле для активации аккаунта
+      activationCode: Math.floor(100000 + Math.random() * 900000).toString(), // Генерация кода активации
+    });
     await newUser.save();
 
-    // Создание JWT-токена
-    const token = jwt.sign({ id: newUser._id }, jwtSecret, { expiresIn: '1h' });
+    // Отправка кода активации на email
+    const mailOptions = {
+      from: 'your-email@gmail.com',
+      to: newUser.email,
+      subject: 'Код активации аккаунта',
+      text: `Ваш код активации: ${newUser.activationCode}`,
+    };
+
+    await transporter.sendMail(mailOptions);
 
     return res.status(201).json({
-      msg: 'Пользователь успешно зарегистрирован',
-      token,
-      user: { id: newUser._id, username: newUser.username, email: newUser.email },
+      msg: 'Пользователь зарегистрирован. Проверьте свою почту для активации аккаунта.',
     });
   } catch (err: any) {
     return res.status(500).json({ msg: 'Ошибка сервера', error: err.message });
   }
 };
 
+// Функция активации аккаунта
+export const activateAccount = async (req: Request, res: Response): Promise<Response> => {
+  const { email, activationCode } = req.body;
+
+  try {
+    const user: IUser | null = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(400).json({ msg: 'Пользователь не найден' });
+    }
+
+    if (user.isActivated) {
+      return res.status(400).json({ msg: 'Аккаунт уже активирован' });
+    }
+
+    if (user.activationCode !== activationCode) {
+      return res.status(400).json({ msg: 'Неправильный код активации' });
+    }
+
+    user.isActivated = true; // Активируем аккаунт
+    user.activationCode = ''; // Удаляем код активации
+    await user.save();
+
+    return res.status(200).json({ msg: 'Аккаунт успешно активирован' });
+  } catch (err: any) {
+    return res.status(500).json({ msg: 'Ошибка сервера', error: err.message });
+  }
+};
+
+// Функция логина
 export const login = async (
   req: Request,
   res: Response,
   next: NextFunction
 ): Promise<Response> => {
-  // Проверка валидации
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ errors: errors.array() });
@@ -54,13 +108,26 @@ export const login = async (
     const { email, password } = req.body;
     const user: IUser | null = await User.findOne({ email });
 
-    if (!user || user.password !== password) {
-      // Элементарная проверка пароля
+    if (!user) {
+      return res.status(400).json({ msg: 'Неправильный email или пароль' });
+    }
+
+    // Проверяем, активирован ли аккаунт
+    if (!user.isActivated) {
+      return res
+        .status(400)
+        .json({ msg: 'Аккаунт не активирован. Проверьте свою почту.' });
+    }
+
+    // Сравниваем пароли
+    const isMatch = await user.isValidPassword(password);
+    if (!isMatch) {
       return res.status(400).json({ msg: 'Неправильный email или пароль' });
     }
 
     // Создание JWT-токена
     const token = jwt.sign({ id: user._id }, jwtSecret, { expiresIn: '1h' });
+
     return res.json({
       msg: 'Успешный вход',
       token,

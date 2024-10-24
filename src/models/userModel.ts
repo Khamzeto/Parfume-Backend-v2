@@ -12,6 +12,8 @@ export interface IUser extends Document {
   roles: string[];
   wishlist: string[]; // Array for perfume IDs
   perfumeCollection: string[]; // Array for perfume IDs user owns
+  isActivated: boolean; // Account activation status
+  activationCode: string; // Code sent to user for email confirmation
   isValidPassword(password: string): Promise<boolean>;
 }
 
@@ -45,7 +47,7 @@ const UserSchema: Schema<IUser> = new Schema({
     sparse: true,
   },
   avatar: {
-    type: String, // Avatar field to store the URL or path of the image
+    type: String,
   },
   createdAt: {
     type: Date,
@@ -58,6 +60,10 @@ const UserSchema: Schema<IUser> = new Schema({
   perfumeCollection: {
     type: [String],
     default: [],
+  },
+  isActivated: {
+    type: Boolean,
+    default: false, // По умолчанию аккаунт не активирован
   },
 });
 
