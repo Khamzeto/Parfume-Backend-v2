@@ -82,13 +82,15 @@ export const activateAccount = async (req: Request, res: Response): Promise<Resp
       return res.status(400).json({ msg: 'Аккаунт уже активирован' });
     }
 
-    // Преобразуем и сравниваем коды как строки
-    if (user.activationCode !== String(activationCode)) {
+    // Приведение к строке и удаление лишних пробелов
+    const trimmedActivationCode = activationCode.toString().trim();
+
+    if (user.activationCode.trim() !== trimmedActivationCode) {
       return res.status(400).json({ msg: 'Неправильный код активации' });
     }
 
     user.isActivated = true; // Активируем аккаунт
-    user.activationCode = ''; // Очищаем код активации после успешной активации
+    user.activationCode = ''; // Удаляем код активации
     await user.save();
 
     return res.status(200).json({ msg: 'Аккаунт успешно активирован' });
