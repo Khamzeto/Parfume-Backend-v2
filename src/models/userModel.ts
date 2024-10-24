@@ -1,5 +1,5 @@
 import mongoose, { Document, Schema } from 'mongoose';
-import bcrypt from 'bcrypt';
+import argon2 from 'argon2';
 
 export interface IUser extends Document {
   username: string;
@@ -70,14 +70,13 @@ const UserSchema: Schema<IUser> = new Schema({
   },
 });
 
-// Hashing password before saving
+// Хэширование пароля перед сохранением
 UserSchema.pre<IUser>('save', async function (next) {
   if (!this.isModified('password') || !this.password) {
     return next();
   }
   try {
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(this.password, salt);
+    const hashedPassword = await argon2.hash(this.password.trim());
     this.password = hashedPassword;
     return next();
   } catch (err: any) {
@@ -85,11 +84,11 @@ UserSchema.pre<IUser>('save', async function (next) {
   }
 });
 
-// Method to validate password
+// Метод для проверки пароля
 UserSchema.methods.isValidPassword = async function (password: string): Promise<boolean> {
   try {
     if (!this.password) return false;
-    return await bcrypt.compare(password, this.password);
+    return await argon2.verify(this.password, password.trim());
   } catch (err) {
     throw err;
   }
