@@ -132,16 +132,9 @@ export const login = async (req: Request, res: Response): Promise<Response> => {
         .json({ msg: 'Аккаунт не активирован. Проверьте свою почту.' });
     }
 
-    // Проверка наличия пароля
-    if (!user.password) {
-      return res.status(400).json({ msg: 'Пароль не задан для этого пользователя' });
-    }
-
     // Логирование данных для отладки
     console.log('Оригинальный пароль при логине:', password);
-    console.log('Оригинальная длина пароля:', password.length);
     console.log('Хэшированный пароль из базы данных:', user.password);
-    console.log('Длина хэшированного пароля из базы данных:', user.password.length);
 
     // Сравниваем пароли с использованием argon2
     const isMatch = await argon2.verify(user.password, password.trim());
