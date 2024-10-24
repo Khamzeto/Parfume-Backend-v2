@@ -1,7 +1,7 @@
-import bcrypt from 'bcryptjs';
+import argon2 from 'argon2';
 import nodemailer from 'nodemailer';
 import jwt from 'jsonwebtoken';
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response } from 'express';
 import { validationResult } from 'express-validator';
 import User, { IUser } from '../models/userModel';
 
@@ -33,8 +33,8 @@ export const register = async (req: Request, res: Response): Promise<Response> =
       return res.status(400).json({ msg: 'Пользователь с таким email уже существует' });
     }
 
-    // Хэширование пароля
-    const hashedPassword = await bcrypt.hash(password.trim(), 10);
+    // Хэширование пароля с использованием argon2
+    const hashedPassword = await argon2.hash(password.trim());
     console.log('Оригинальный пароль:', password);
     console.log('Хэшированный пароль для сохранения:', hashedPassword);
 
@@ -143,8 +143,8 @@ export const login = async (req: Request, res: Response): Promise<Response> => {
     console.log('Хэшированный пароль из базы данных:', user.password);
     console.log('Длина хэшированного пароля из базы данных:', user.password.length);
 
-    // Сравниваем пароли
-    const isMatch = await bcrypt.compare(password.trim(), user.password.trim());
+    // Сравниваем пароли с использованием argon2
+    const isMatch = await argon2.verify(user.password, password.trim());
     console.log('Результат сравнения паролей:', isMatch);
 
     if (!isMatch) {
