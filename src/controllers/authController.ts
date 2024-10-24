@@ -36,13 +36,16 @@ export const register = async (req: Request, res: Response): Promise<Response> =
     // Хэширование пароля
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Генерация 4-значного кода активации
+    const activationCode = Math.floor(1000 + Math.random() * 9000).toString();
+
     // Создание нового пользователя
     const newUser: IUser = new User({
       username,
       email,
       password: hashedPassword, // Храним хэш пароля
       isActivated: false, // Поле для активации аккаунта
-      activationCode: Math.floor(100000 + Math.random() * 900000).toString(), // Генерация кода активации
+      activationCode, // Генерация 4-значного кода активации
     });
     await newUser.save();
 
@@ -51,7 +54,7 @@ export const register = async (req: Request, res: Response): Promise<Response> =
       from: 'your-email@gmail.com',
       to: newUser.email,
       subject: 'Код активации аккаунта',
-      text: `Ваш код активации: ${newUser.activationCode}`,
+      text: `Ваш код активации: ${activationCode}`,
     };
 
     await transporter.sendMail(mailOptions);
