@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import Perfume from '../models/perfumeModel';
 import Fuse from 'fuse.js';
-import { transliterate as tr } from 'transliteration';
+import { transliterate as tr, slugify } from 'transliteration';
 import axios from 'axios';
 
 // Функция для перевода текста
@@ -74,17 +74,24 @@ export const translateAndUpdateAllFields = async (
 
 export const searchPerfumes = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { query, page = 1, limit = 10, sortBy = 'relevance', gender, year } = req.query;
+    const {
+      query,
+      page = 1,
+      limit = 10,
+      sortBy = 'relevance',
+      gender,
+      year,
+      notes,
+    } = req.query;
 
-    // Проверка наличия query
-    if (!query || typeof query !== 'string') {
-      res.status(400).json({ message: 'Query parameter is required' });
-      return;
+    // Нормализация и транслитерация запроса, если он присутствует
+    let normalizedQuery = '';
+    let transliteratedQuery = '';
+
+    if (query && typeof query === 'string') {
+      normalizedQuery = query.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      transliteratedQuery = slugify(normalizedQuery.toLowerCase()); // Используем slugify напрямую
     }
-
-    // Нормализация и транслитерация запроса
-    const normalizedQuery = query.normalize('NFD').replace(/[\u0300-\u036f]/g, ''); // Нормализация
-    const transliteratedQuery = tr(normalizedQuery.toLowerCase()); // Транслитерация
 
     // Параметры пагинации
     const pageNumber = Number(page);
@@ -92,94 +99,140 @@ export const searchPerfumes = async (req: Request, res: Response): Promise<void>
     const skip = (pageNumber - 1) * limitNumber;
 
     // Определение сортировки
-    let sortCriteria: any = {
-      namePriority: -1,
-      exactMatch: -1,
-      lengthDifference: 1,
-    }; // По умолчанию сортировка по релевантности
+    let sortCriteria: any = {};
 
     if (sortBy === 'popular') {
-      sortCriteria = { rating_count: -1, rating_value: -1 }; // Сортировка по популярности
+      sortCriteria = { rating_count: -1, rating_value: -1 };
     } else if (sortBy === 'unpopular') {
-      sortCriteria = { rating_count: 1, rating_value: 1 }; // Сортировка по непопулярности
+      sortCriteria = { rating_count: 1, rating_value: 1 };
     } else if (sortBy === 'newest') {
-      sortCriteria = { release_year: -1 }; // Сортировка по новейшим
+      sortCriteria = { release_year: -1 };
+    } else {
+      // По умолчанию сортировка по релевантности
+      sortCriteria = {
+        namePriority: -1,
+        exactMatch: -1,
+        lengthDifference: 1,
+      };
     }
 
-    // Фильтры по гендеру и году
-    const filters: any = {
-      $or: [
-        { name: { $regex: normalizedQuery, $options: 'i' } }, // Поиск по имени на латинице
-        { brand: { $regex: normalizedQuery, $options: 'i' } }, // Поиск по бренду на латинице
-        { name: { $regex: transliteratedQuery, $options: 'i' } }, // Поиск по транслитерированному имени
-        { brand: { $regex: transliteratedQuery, $options: 'i' } }, // Поиск по транслитерированному бренду
-        { name_ru: { $regex: query, $options: 'i' } }, // Поиск по имени на русском
-        { brand_ru: { $regex: query, $options: 'i' } }, // Поиск по бренду на русском
-      ],
-    };
+    // Фильтры
+    const filters: any = {};
 
+    // Создаем массив условий для $and
+    const andConditions: any[] = [];
+
+    // Фильтр по запросу (имя или бренд)
+    if (query && typeof query === 'string') {
+      andConditions.push({
+        $or: [
+          { name: { $regex: normalizedQuery, $options: 'i' } },
+          { brand: { $regex: normalizedQuery, $options: 'i' } },
+          { name: { $regex: transliteratedQuery, $options: 'i' } },
+          { brand: { $regex: transliteratedQuery, $options: 'i' } },
+          { name_ru: { $regex: query, $options: 'i' } },
+          { brand_ru: { $regex: query, $options: 'i' } },
+        ],
+      });
+    }
+
+    // Фильтр по нотам
+    if (notes) {
+      let notesArray: string[] = [];
+      if (typeof notes === 'string') {
+        notesArray = notes.split(',').map(note => note.trim());
+      } else if (Array.isArray(notes)) {
+        notesArray = notes as string[];
+      }
+
+      andConditions.push({
+        $or: [
+          { 'notes.top_notes': { $in: notesArray } },
+          { 'notes.heart_notes': { $in: notesArray } },
+          { 'notes.base_notes': { $in: notesArray } },
+          { 'notes.additional_notes': { $in: notesArray } },
+        ],
+      });
+    }
+
+    // Добавляем условия $and в фильтр, если они есть
+    if (andConditions.length > 0) {
+      filters.$and = andConditions;
+    }
+
+    // Фильтр по гендеру
     if (gender) {
       filters.gender = gender;
     }
 
+    // Фильтр по году выпуска
     if (year) {
       filters.release_year = Number(year);
     }
 
-    // Выполнение запроса для поиска парфюмов
-    const perfumesFromDb = await Perfume.aggregate([
+    // Построение агрегационного пайплайна
+    const pipeline: any[] = [
       { $match: filters },
       {
         $addFields: {
-          exactMatch: {
-            $cond: {
-              if: {
-                $or: [
-                  { $eq: ['$name', normalizedQuery] },
-                  { $eq: ['$brand', normalizedQuery] },
-                  { $eq: ['$name', transliteratedQuery] },
-                  { $eq: ['$brand', transliteratedQuery] },
-                  { $eq: ['$name_ru', query] },
-                  { $eq: ['$brand_ru', query] },
-                ],
-              },
-              then: 1,
-              else: 0,
-            },
-          },
-          namePriority: {
-            $cond: {
-              if: {
-                $or: [
-                  { $regexMatch: { input: '$name', regex: query, options: 'i' } },
-                  { $regexMatch: { input: '$name_ru', regex: query, options: 'i' } },
-                ],
-              },
-              then: 1,
-              else: 0,
-            },
-          },
-          lengthDifference: {
-            $abs: { $subtract: [{ $strLenCP: '$name' }, normalizedQuery.length] },
-          },
-          rating_count: { $ifNull: ['$rating_count', 0] }, // Подсчет количества отзывов
-          rating_value: { $ifNull: ['$rating_value', 0] }, // Средний рейтинг
+          rating_count: { $ifNull: ['$rating_count', 0] },
+          rating_value: { $ifNull: ['$rating_value', 0] },
         },
       },
-      { $sort: sortCriteria }, // Сортировка по критерию
-      { $skip: skip },
-      { $limit: limitNumber },
-    ]);
+    ];
 
-    // Если результаты отсутствуют
-    if (perfumesFromDb.length === 0) {
-      res.status(404).json({ message: 'Perfumes not found' });
-      return;
+    // Сортировка
+    if (sortBy === 'relevance' && query && typeof query === 'string') {
+      pipeline.push(
+        {
+          $addFields: {
+            exactMatch: {
+              $cond: {
+                if: {
+                  $or: [
+                    { $eq: ['$name', normalizedQuery] },
+                    { $eq: ['$brand', normalizedQuery] },
+                    { $eq: ['$name', transliteratedQuery] },
+                    { $eq: ['$brand', transliteratedQuery] },
+                    { $eq: ['$name_ru', query] },
+                    { $eq: ['$brand_ru', query] },
+                  ],
+                },
+                then: 1,
+                else: 0,
+              },
+            },
+            namePriority: {
+              $cond: {
+                if: {
+                  $or: [
+                    { $regexMatch: { input: '$name', regex: query, options: 'i' } },
+                    { $regexMatch: { input: '$name_ru', regex: query, options: 'i' } },
+                  ],
+                },
+                then: 1,
+                else: 0,
+              },
+            },
+            lengthDifference: {
+              $abs: { $subtract: [{ $strLenCP: '$name' }, normalizedQuery.length] },
+            },
+          },
+        },
+        { $sort: sortCriteria }
+      );
+    } else {
+      pipeline.push({ $sort: sortCriteria });
     }
+
+    // Пагинация
+    pipeline.push({ $skip: skip }, { $limit: limitNumber });
+
+    // Выполнение агрегационного пайплайна
+    const perfumesFromDb = await Perfume.aggregate(pipeline);
 
     // Подсчет общего количества результатов для пагинации
     const totalResults = await Perfume.countDocuments(filters);
-
     const totalPages = Math.ceil(totalResults / limitNumber);
 
     // Ответ клиенту с результатами
