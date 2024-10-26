@@ -85,14 +85,11 @@ export const searchPerfumes = async (req: Request, res: Response): Promise<void>
       notes,
     } = req.query;
 
-    // Определяем, будет ли поиск по бренду, по названию или оба сразу
     const isBrandSearch = Boolean(queryBrand);
     const isNameSearch = Boolean(query);
 
-    // Если указан queryBrand, приоритетно устанавливаем строку поиска по бренду
+    // Нормализация строки поиска
     const searchQuery = queryBrand || query;
-
-    // Нормализуем и транслитерируем строку поиска
     let normalizedQuery = '';
     let transliteratedQuery = '';
 
@@ -119,13 +116,12 @@ export const searchPerfumes = async (req: Request, res: Response): Promise<void>
         : { namePriority: -1, exactMatch: -1, lengthDifference: 1 };
     }
 
-    // Условия фильтрации и настройки условий `$and`
     const filters: any = {};
-    const andConditions: any[] = [];
+    const orConditions: any[] = [];
 
-    // Условие фильтрации по названию, если указано `query`
+    // Добавляем фильтр по названию, если указан `query`
     if (isNameSearch) {
-      andConditions.push({
+      orConditions.push({
         $or: [
           { name: { $regex: normalizedQuery, $options: 'i' } },
           { name_ru: { $regex: query, $options: 'i' } },
@@ -134,9 +130,9 @@ export const searchPerfumes = async (req: Request, res: Response): Promise<void>
       });
     }
 
-    // Условие фильтрации по бренду, если указано `queryBrand`
+    // Добавляем фильтр по бренду, если указан `queryBrand`
     if (isBrandSearch) {
-      andConditions.push({
+      orConditions.push({
         $or: [
           { brand: { $regex: normalizedQuery, $options: 'i' } },
           { brand_ru: { $regex: queryBrand, $options: 'i' } },
@@ -145,12 +141,12 @@ export const searchPerfumes = async (req: Request, res: Response): Promise<void>
       });
     }
 
-    // Фильтрация по дополнительным параметрам
+    // Добавляем другие фильтры
     if (notes) {
       const notesArray = Array.isArray(notes)
         ? notes
         : (notes as string).split(',').map(note => note.trim());
-      andConditions.push({
+      orConditions.push({
         $or: [
           { 'notes.top_notes': { $in: notesArray } },
           { 'notes.heart_notes': { $in: notesArray } },
@@ -162,7 +158,7 @@ export const searchPerfumes = async (req: Request, res: Response): Promise<void>
     if (gender) filters.gender = gender;
     if (year) filters.release_year = Number(year);
 
-    if (andConditions.length > 0) filters.$and = andConditions;
+    if (orConditions.length > 0) filters.$or = orConditions;
 
     // Пайплайн для агрегирования
     const pipeline: any[] = [
