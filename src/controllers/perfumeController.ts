@@ -572,14 +572,9 @@ export const addReview = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // Преобразуем perfume_id к ObjectId
-    if (!mongoose.Types.ObjectId.isValid(perfume_id)) {
-      res.status(400).json({ message: 'Неверный формат perfume_id' });
-      return;
-    }
-
-    const perfume = await Perfume.findByIdAndUpdate(
-      new mongoose.Types.ObjectId(perfume_id), // Преобразуем perfume_id в ObjectId
+    // Находим парфюм по полю perfume_id и добавляем отзыв
+    const perfume = await Perfume.findOneAndUpdate(
+      { perfume_id }, // Используем perfume_id для поиска
       {
         $push: {
           reviews: {
