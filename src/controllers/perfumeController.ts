@@ -85,11 +85,14 @@ export const searchPerfumes = async (req: Request, res: Response): Promise<void>
       notes,
     } = req.query;
 
-    // Check if the request is for brands or perfumes
+    // Определяем, будет ли поиск по бренду, по названию или оба сразу
     const isBrandSearch = Boolean(queryBrand);
-    const searchQuery = isBrandSearch ? queryBrand : query;
+    const isNameSearch = Boolean(query);
 
-    // Normalize and transliterate the search query if present
+    // Если указан queryBrand, приоритетно устанавливаем строку поиска по бренду
+    const searchQuery = queryBrand || query;
+
+    // Нормализуем и транслитерируем строку поиска
     let normalizedQuery = '';
     let transliteratedQuery = '';
 
@@ -98,7 +101,7 @@ export const searchPerfumes = async (req: Request, res: Response): Promise<void>
       transliteratedQuery = slugify(normalizedQuery.toLowerCase());
     }
 
-    // Pagination and sorting parameters
+    // Параметры для пагинации и сортировки
     const pageNumber = Number(page);
     const limitNumber = Number(limit);
     const skip = (pageNumber - 1) * limitNumber;
@@ -116,49 +119,52 @@ export const searchPerfumes = async (req: Request, res: Response): Promise<void>
         : { namePriority: -1, exactMatch: -1, lengthDifference: 1 };
     }
 
-    // Filters and conditions setup
+    // Условия фильтрации и настройки условий `$and`
     const filters: any = {};
     const andConditions: any[] = [];
 
-    if (searchQuery && typeof searchQuery === 'string') {
+    // Условие фильтрации по названию, если указано `query`
+    if (isNameSearch) {
       andConditions.push({
         $or: [
           { name: { $regex: normalizedQuery, $options: 'i' } },
-          { brand: { $regex: normalizedQuery, $options: 'i' } },
+          { name_ru: { $regex: query, $options: 'i' } },
           { name: { $regex: transliteratedQuery, $options: 'i' } },
-          { brand: { $regex: transliteratedQuery, $options: 'i' } },
-          { name_ru: { $regex: searchQuery, $options: 'i' } },
-          { brand_ru: { $regex: searchQuery, $options: 'i' } },
         ],
       });
     }
 
-    if (!isBrandSearch) {
-      if (notes) {
-        // Ensure notes is properly handled as an array of strings
-        let notesArray: string[] = [];
-        if (notes) {
-          notesArray = Array.isArray(notes)
-            ? notes.map(note => String(note).trim()) // Convert each note to string and trim
-            : (notes as string).split(',').map(note => note.trim()); // Otherwise, split and trim
-        }
-
-        andConditions.push({
-          $or: [
-            { 'notes.top_notes': { $in: notesArray } },
-            { 'notes.heart_notes': { $in: notesArray } },
-            { 'notes.base_notes': { $in: notesArray } },
-            { 'notes.additional_notes': { $in: notesArray } },
-          ],
-        });
-      }
-      if (gender) filters.gender = gender;
-      if (year) filters.release_year = Number(year);
+    // Условие фильтрации по бренду, если указано `queryBrand`
+    if (isBrandSearch) {
+      andConditions.push({
+        $or: [
+          { brand: { $regex: normalizedQuery, $options: 'i' } },
+          { brand_ru: { $regex: queryBrand, $options: 'i' } },
+          { brand: { $regex: transliteratedQuery, $options: 'i' } },
+        ],
+      });
     }
+
+    // Фильтрация по дополнительным параметрам
+    if (notes) {
+      const notesArray = Array.isArray(notes)
+        ? notes
+        : (notes as string).split(',').map(note => note.trim());
+      andConditions.push({
+        $or: [
+          { 'notes.top_notes': { $in: notesArray } },
+          { 'notes.heart_notes': { $in: notesArray } },
+          { 'notes.base_notes': { $in: notesArray } },
+          { 'notes.additional_notes': { $in: notesArray } },
+        ],
+      });
+    }
+    if (gender) filters.gender = gender;
+    if (year) filters.release_year = Number(year);
 
     if (andConditions.length > 0) filters.$and = andConditions;
 
-    // Pipeline for aggregation
+    // Пайплайн для агрегирования
     const pipeline: any[] = [
       { $match: filters },
       {
@@ -185,6 +191,7 @@ export const searchPerfumes = async (req: Request, res: Response): Promise<void>
       { $limit: limitNumber },
     ];
 
+    // Добавляем приоритет по имени, если указан query и сортировка по relevance
     if (!isBrandSearch && sortBy === 'relevance' && query && typeof query === 'string') {
       pipeline.splice(1, 0, {
         $addFields: {
@@ -208,7 +215,6 @@ export const searchPerfumes = async (req: Request, res: Response): Promise<void>
     }
 
     const searchResults = await Perfume.aggregate(pipeline);
-
     const totalResults = await Perfume.countDocuments(filters);
     const totalPages = Math.ceil(totalResults / limitNumber);
 
