@@ -563,7 +563,7 @@ export const getRecentPerfumes = async (req: Request, res: Response): Promise<vo
 };
 export const addReview = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { perfumeId } = req.params;
+    const { perfume_id } = req.params; // Изменено с perfumeId на perfume_id
     const { userId, body } = req.body;
 
     // Проверяем, что все обязательные поля заполнены
@@ -574,7 +574,7 @@ export const addReview = async (req: Request, res: Response): Promise<void> => {
 
     // Находим парфюм и добавляем отзыв
     const perfume = await Perfume.findByIdAndUpdate(
-      perfumeId,
+      perfume_id, // Изменено с perfumeId на perfume_id
       {
         $push: {
           reviews: {
