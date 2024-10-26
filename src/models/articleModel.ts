@@ -1,4 +1,5 @@
 import mongoose, { Schema, Document, Types } from 'mongoose';
+import User, { IUser } from '../models/userModel';
 
 export interface IComment {
   _id: Types.ObjectId;

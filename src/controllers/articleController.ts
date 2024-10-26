@@ -543,8 +543,11 @@ export const getPopularArticles = async (req: Request, res: Response): Promise<v
 // Получение последних 9 статей по дате создания
 export const getLatestArticles = async (req: Request, res: Response): Promise<void> => {
   try {
-    // Сортируем по дате создания в порядке убывания и ограничиваем 9 статьями
-    const latestArticles = await ArticleRequest.find().sort({ createdAt: -1 }).limit(9);
+    // Сортируем по дате создания в порядке убывания и ограничиваем 9 статьями, добавляем populate
+    const latestArticles = await ArticleRequest.find()
+      .sort({ createdAt: -1 })
+      .limit(9)
+      .populate('userId', 'username avatar'); // Подтягиваем username и avatar из User
 
     res.json(latestArticles);
   } catch (err) {
