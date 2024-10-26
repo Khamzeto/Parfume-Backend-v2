@@ -3,6 +3,7 @@ import Perfume from '../models/perfumeModel';
 import Fuse from 'fuse.js';
 import { transliterate as tr, slugify } from 'transliteration';
 import axios from 'axios';
+import mongoose from 'mongoose';
 
 // Функция для перевода текста
 const translateText = async (
@@ -557,6 +558,43 @@ export const getRecentPerfumes = async (req: Request, res: Response): Promise<vo
       totalResults: recentPerfumes.length,
     });
   } catch (err) {
+    res.status(500).json({ message: (err as Error).message });
+  }
+};
+export const addReview = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { perfumeId } = req.params;
+    const { userId, body } = req.body;
+
+    // Проверяем, что все обязательные поля заполнены
+    if (!userId || !body) {
+      res.status(400).json({ message: 'userId и body обязательны для отзыва' });
+      return;
+    }
+
+    // Находим парфюм и добавляем отзыв
+    const perfume = await Perfume.findByIdAndUpdate(
+      perfumeId,
+      {
+        $push: {
+          reviews: {
+            userId: new mongoose.Types.ObjectId(userId),
+            body,
+            createdAt: new Date(),
+          },
+        },
+      },
+      { new: true }
+    ).populate('reviews.userId', 'username avatar'); // Подгружаем информацию о пользователе
+
+    if (!perfume) {
+      res.status(404).json({ message: 'Парфюм не найден' });
+      return;
+    }
+
+    res.status(201).json({ message: 'Отзыв добавлен', reviews: perfume.reviews });
+  } catch (err) {
+    console.error('Ошибка при добавлении отзыва:', err);
     res.status(500).json({ message: (err as Error).message });
   }
 };

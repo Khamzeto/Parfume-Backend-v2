@@ -65,12 +65,9 @@ const perfumeSchema: Schema = new Schema({
   perfumers_en: [String],
   reviews: [
     {
-      username: { type: String, required: true },
-      nickname: { type: String, required: true },
+      userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
       body: { type: String, required: true },
-      ratings: { type: Schema.Types.Mixed, default: {} },
-      awards: { type: String, default: '0' },
-      comments: { type: String, default: '0' },
+      createdAt: { type: Date, default: Date.now },
     },
   ],
 });

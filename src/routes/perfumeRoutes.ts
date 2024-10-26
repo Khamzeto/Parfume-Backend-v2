@@ -17,28 +17,29 @@ import {
 
 const router = express.Router();
 
-// Define specific routes first
-router.get('/search', searchPerfumes); // Search perfumes
-router.get('/searchBrands', searchBrands); // Search brands
-router.get('/similar', getPerfumesWithSimilarAndSearch); // Get perfumes with similar perfumes
-router.get('/recent', getRecentPerfumes);
-// Route for uploading gallery images
-router.post('/gallery/:perfumeId', uploadGalleryImages);
-router.get('/gallery/:perfumeId', getGalleryImages); // Get gallery images
+// Определяем конкретные маршруты в начале
+router.get('/search', searchPerfumes); // Поиск парфюмов
+router.get('/searchBrands', searchBrands); // Поиск брендов
+router.get('/similar', getPerfumesWithSimilarAndSearch); // Поиск похожих парфюмов
+router.get('/recent', getRecentPerfumes); // Получение последних парфюмов
 
-// Route to retrieve perfumes by multiple IDs
-router.post('/by-ids', getPerfumesByIds);
+// Маршрут для загрузки изображений галереи
+router.post('/gallery/:perfumeId', uploadGalleryImages); // Загрузка изображений в галерею
+router.get('/gallery/:perfumeId', getGalleryImages); // Получение изображений галереи
 
-// Route for translating and updating all fields
-router.put('/translate-all', translateAndUpdateAllFields);
+// Маршрут для получения парфюмов по нескольким ID
+router.post('/by-ids', getPerfumesByIds); // Получение парфюмов по нескольким ID
 
-// General routes for all perfumes
-router.get('/', getAllPerfumes); // Get all perfumes
-router.post('/', createPerfume); // Create new perfume
+// Маршрут для перевода и обновления всех полей
+router.put('/translate-all', translateAndUpdateAllFields); // Перевод и обновление всех полей
 
-// Generic routes last (to prevent conflicts)
-router.get('/:perfume_id', getPerfumeById); // Get perfume by ID
-router.put('/:id', updatePerfume); // Update perfume by ID
-router.delete('/:id', deletePerfume); // Delete perfume by ID
+// Общие маршруты для всех парфюмов
+router.get('/', getAllPerfumes); // Получение всех парфюмов
+router.post('/', createPerfume); // Создание нового парфюма
+
+// Универсальные маршруты (в конце для предотвращения конфликтов)
+router.get('/:perfume_id', getPerfumeById); // Получение парфюма по ID
+router.put('/:id', updatePerfume); // Обновление парфюма по ID
+router.delete('/:id', deletePerfume); // Удаление парфюма по ID
 
 export default router;
