@@ -85,18 +85,19 @@ export const searchPerfumes = async (req: Request, res: Response): Promise<void>
       notes,
     } = req.query;
 
-    const isBrandSearch = Boolean(queryBrand);
-    const isNameSearch = Boolean(query);
+    const isBrandSearch = typeof queryBrand === 'string' && queryBrand.length > 0;
+    const isNameSearch = typeof query === 'string' && query.length > 0;
 
-    // Нормализация строки поиска
-    const searchQuery = queryBrand || query;
-    let normalizedQuery = '';
-    let transliteratedQuery = '';
+    // Нормализация строки поиска с проверками
+    const normalizedQuery = isNameSearch
+      ? query.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      : isBrandSearch
+      ? (queryBrand as string).normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      : '';
 
-    if (searchQuery && typeof searchQuery === 'string') {
-      normalizedQuery = searchQuery.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-      transliteratedQuery = slugify(normalizedQuery.toLowerCase());
-    }
+    const transliteratedQuery = normalizedQuery
+      ? slugify(normalizedQuery.toLowerCase())
+      : '';
 
     // Параметры для пагинации и сортировки
     const pageNumber = Number(page);
@@ -119,8 +120,8 @@ export const searchPerfumes = async (req: Request, res: Response): Promise<void>
     const filters: any = {};
     const orConditions: any[] = [];
 
-    // Добавляем фильтр по названию, если указан `query`
-    if (isNameSearch) {
+    // Условие для поиска по названию
+    if (isNameSearch && typeof query === 'string') {
       orConditions.push({
         $or: [
           { name: { $regex: normalizedQuery, $options: 'i' } },
@@ -130,8 +131,8 @@ export const searchPerfumes = async (req: Request, res: Response): Promise<void>
       });
     }
 
-    // Добавляем фильтр по бренду, если указан `queryBrand`
-    if (isBrandSearch) {
+    // Условие для поиска по бренду
+    if (isBrandSearch && typeof queryBrand === 'string') {
       orConditions.push({
         $or: [
           { brand: { $regex: normalizedQuery, $options: 'i' } },
@@ -141,12 +142,15 @@ export const searchPerfumes = async (req: Request, res: Response): Promise<void>
       });
     }
 
+    // Используем `$or` для поиска по обоим параметрам
+    if (orConditions.length > 0) filters.$or = orConditions;
+
     // Добавляем другие фильтры
     if (notes) {
       const notesArray = Array.isArray(notes)
         ? notes
         : (notes as string).split(',').map(note => note.trim());
-      orConditions.push({
+      filters.$or.push({
         $or: [
           { 'notes.top_notes': { $in: notesArray } },
           { 'notes.heart_notes': { $in: notesArray } },
@@ -157,8 +161,6 @@ export const searchPerfumes = async (req: Request, res: Response): Promise<void>
     }
     if (gender) filters.gender = gender;
     if (year) filters.release_year = Number(year);
-
-    if (orConditions.length > 0) filters.$or = orConditions;
 
     // Пайплайн для агрегирования
     const pipeline: any[] = [
@@ -171,7 +173,7 @@ export const searchPerfumes = async (req: Request, res: Response): Promise<void>
                 $or: [
                   { $eq: ['$brand', normalizedQuery] },
                   { $eq: ['$brand', transliteratedQuery] },
-                  { $eq: ['$brand_ru', searchQuery] },
+                  { $eq: ['$brand_ru', queryBrand] },
                 ],
               },
               then: 1,
