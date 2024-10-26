@@ -545,3 +545,18 @@ export const getPerfumesWithSimilarAndSearch = async (
     res.status(500).json({ message: (err as Error).message });
   }
 };
+export const getRecentPerfumes = async (req: Request, res: Response): Promise<void> => {
+  try {
+    // Находим последние 20 парфюмов, сортируя по _id
+    const recentPerfumes = await Perfume.find()
+      .sort({ _id: -1 }) // Сортировка по убыванию _id
+      .limit(20); // Ограничение количества результатов
+
+    res.json({
+      perfumes: recentPerfumes,
+      totalResults: recentPerfumes.length,
+    });
+  } catch (err) {
+    res.status(500).json({ message: (err as Error).message });
+  }
+};

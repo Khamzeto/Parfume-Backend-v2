@@ -12,6 +12,7 @@ import {
   getGalleryImages,
   getPerfumesByIds,
   getPerfumesWithSimilarAndSearch,
+  getRecentPerfumes,
 } from '../controllers/perfumeController';
 
 const router = express.Router();
@@ -20,7 +21,7 @@ const router = express.Router();
 router.get('/search', searchPerfumes); // Search perfumes
 router.get('/searchBrands', searchBrands); // Search brands
 router.get('/similar', getPerfumesWithSimilarAndSearch); // Get perfumes with similar perfumes
-
+router.get('/recent', getRecentPerfumes);
 // Route for uploading gallery images
 router.post('/gallery/:perfumeId', uploadGalleryImages);
 router.get('/gallery/:perfumeId', getGalleryImages); // Get gallery images
