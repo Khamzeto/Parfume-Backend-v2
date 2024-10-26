@@ -16,13 +16,16 @@ import {
   makeArticlePopular,
   updatePopularityScore,
   removePopularity,
-  getPopularArticles, // Контроллер для удаления ответа на комментарий
+  getPopularArticles,
+  getLatestArticles, // Контроллер для удаления ответа на комментарий
 } from '../controllers/articleController'; // Импорт контроллеров
 
 const router = Router();
 
 // Создание заявки на добавление статьи
 router.post('/requests', createArticleRequest);
+// В articlesRouter.ts
+router.get('/latest', getLatestArticles); // Маршрут для получения последних 9 статей
 
 // Получение всех заявок на статьи (с пагинацией)
 router.get('/requests', getAllArticleRequests);

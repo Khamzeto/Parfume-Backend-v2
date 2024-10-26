@@ -540,3 +540,17 @@ export const getPopularArticles = async (req: Request, res: Response): Promise<v
     });
   }
 };
+// Получение последних 9 статей по дате создания
+export const getLatestArticles = async (req: Request, res: Response): Promise<void> => {
+  try {
+    // Сортируем по дате создания в порядке убывания и ограничиваем 9 статьями
+    const latestArticles = await ArticleRequest.find().sort({ createdAt: -1 }).limit(9);
+
+    res.json(latestArticles);
+  } catch (err) {
+    res.status(500).json({
+      message: 'Ошибка при получении последних статей.',
+      error: (err as Error).message,
+    });
+  }
+};
