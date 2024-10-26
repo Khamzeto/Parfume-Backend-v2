@@ -13,33 +13,37 @@ import {
   getPerfumesByIds,
   getPerfumesWithSimilarAndSearch,
   getRecentPerfumes,
+  addReview, // Импортируем функцию для добавления отзыва
 } from '../controllers/perfumeController';
 
 const router = express.Router();
 
-// Определяем конкретные маршруты в начале
-router.get('/search', searchPerfumes); // Поиск парфюмов
-router.get('/searchBrands', searchBrands); // Поиск брендов
-router.get('/similar', getPerfumesWithSimilarAndSearch); // Поиск похожих парфюмов
-router.get('/recent', getRecentPerfumes); // Получение последних парфюмов
+// Define specific routes first
+router.get('/search', searchPerfumes); // Search perfumes
+router.get('/searchBrands', searchBrands); // Search brands
+router.get('/similar', getPerfumesWithSimilarAndSearch); // Get perfumes with similar perfumes
+router.get('/recent', getRecentPerfumes);
 
-// Маршрут для загрузки изображений галереи
-router.post('/gallery/:perfumeId', uploadGalleryImages); // Загрузка изображений в галерею
-router.get('/gallery/:perfumeId', getGalleryImages); // Получение изображений галереи
+// Route for uploading gallery images
+router.post('/gallery/:perfumeId', uploadGalleryImages);
+router.get('/gallery/:perfumeId', getGalleryImages); // Get gallery images
 
-// Маршрут для получения парфюмов по нескольким ID
-router.post('/by-ids', getPerfumesByIds); // Получение парфюмов по нескольким ID
+// Route to retrieve perfumes by multiple IDs
+router.post('/by-ids', getPerfumesByIds);
 
-// Маршрут для перевода и обновления всех полей
-router.put('/translate-all', translateAndUpdateAllFields); // Перевод и обновление всех полей
+// Route for translating and updating all fields
+router.put('/translate-all', translateAndUpdateAllFields);
 
-// Общие маршруты для всех парфюмов
-router.get('/', getAllPerfumes); // Получение всех парфюмов
-router.post('/', createPerfume); // Создание нового парфюма
+// General routes for all perfumes
+router.get('/', getAllPerfumes); // Get all perfumes
+router.post('/', createPerfume); // Create new perfume
 
-// Универсальные маршруты (в конце для предотвращения конфликтов)
-router.get('/:perfume_id', getPerfumeById); // Получение парфюма по ID
-router.put('/:id', updatePerfume); // Обновление парфюма по ID
-router.delete('/:id', deletePerfume); // Удаление парфюма по ID
+// Route for adding a review
+router.post('/:perfume_id/reviews', addReview); // Добавляем маршрут для добавления отзыва
+
+// Generic routes last (to prevent conflicts)
+router.get('/:perfume_id', getPerfumeById); // Get perfume by ID
+router.put('/:id', updatePerfume); // Update perfume by ID
+router.delete('/:id', deletePerfume); // Delete perfume by ID
 
 export default router;
