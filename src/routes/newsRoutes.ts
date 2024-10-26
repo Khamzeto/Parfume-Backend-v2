@@ -13,10 +13,17 @@ import {
   updatePopularityScore,
   removePopularity,
   getPopularNews,
+  getNewsById,
+  getLatestNews,
 } from '../controllers/newsController'; // Импортируем контроллер новостей
 import { checkRole } from '../middleware/roleMiddleware';
 
 const router = Router();
+
+// Перемещаем этот маршрут выше
+router.get('/requests/id/:id', getNewsById); // Получение конкретной новости по id
+// В newsRouter.ts
+router.get('/latest', getLatestNews); // Маршрут для получения последних 9 новостей
 
 // Создание заявки на добавление новости
 router.post('/requests', checkRole(['admin', 'editor']), createNewsRequest);
@@ -35,9 +42,6 @@ router.put('/requests/:id', updateNewsRequest);
 
 // Получение всех популярных новостей
 router.get('/popular', getPopularNews);
-
-// Получение конкретной новости по id
-router.get('/requests/id/:id', getAllNewsRequests);
 
 // Добавление комментария к новости
 router.post('/requests/:id/comments', addCommentToNews);

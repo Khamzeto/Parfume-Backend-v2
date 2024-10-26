@@ -407,3 +407,37 @@ export const getPopularNews = async (req: Request, res: Response): Promise<void>
     });
   }
 };
+// Получение конкретной новости по ID
+export const getNewsById = async (req: Request, res: Response): Promise<void> => {
+  const { id } = req.params;
+
+  try {
+    const news = await NewsRequest.findById(id);
+
+    if (!news) {
+      res.status(404).json({ message: 'Новость не найдена.' });
+      return;
+    }
+
+    res.json(news);
+  } catch (err) {
+    res.status(500).json({
+      message: 'Ошибка при получении новости.',
+      error: (err as Error).message,
+    });
+  }
+};
+// Получение последних 9 новостей по createdAt
+export const getLatestNews = async (req: Request, res: Response): Promise<void> => {
+  try {
+    // Сортировка по убыванию даты создания и ограничение до 9 новостей
+    const latestNews = await NewsRequest.find().sort({ createdAt: -1 }).limit(9);
+
+    res.json(latestNews);
+  } catch (err) {
+    res.status(500).json({
+      message: 'Ошибка при получении последних новостей.',
+      error: (err as Error).message,
+    });
+  }
+};
