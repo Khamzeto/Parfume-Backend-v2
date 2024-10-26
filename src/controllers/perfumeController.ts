@@ -563,7 +563,7 @@ export const getRecentPerfumes = async (req: Request, res: Response): Promise<vo
 };
 export const addReview = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { perfume_id } = req.params; // Изменено с perfumeId на perfume_id
+    const { perfume_id } = req.params; // Получаем perfume_id из параметров маршрута
     const { userId, body } = req.body;
 
     // Проверяем, что все обязательные поля заполнены
@@ -572,9 +572,14 @@ export const addReview = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // Находим парфюм и добавляем отзыв
+    // Преобразуем perfume_id к ObjectId
+    if (!mongoose.Types.ObjectId.isValid(perfume_id)) {
+      res.status(400).json({ message: 'Неверный формат perfume_id' });
+      return;
+    }
+
     const perfume = await Perfume.findByIdAndUpdate(
-      perfume_id, // Изменено с perfumeId на perfume_id
+      new mongoose.Types.ObjectId(perfume_id), // Преобразуем perfume_id в ObjectId
       {
         $push: {
           reviews: {
