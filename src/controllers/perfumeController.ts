@@ -677,7 +677,6 @@ export const getRecentReviews = async (req: Request, res: Response): Promise<voi
         $project: {
           _id: 0,
           perfume_id: '$perfume_id', // ID парфюма
-          'userInfo.avatar': 1, // Фото пользователя
           'userInfo.username': 1, // Имя пользователя
           'reviews.body': 1, // Текст отзыва
         },
