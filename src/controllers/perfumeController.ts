@@ -609,7 +609,7 @@ export const addReview = async (req: Request, res: Response): Promise<void> => {
 export const addCategoryRatings = async (req: Request, res: Response): Promise<void> => {
   try {
     const { perfume_id } = req.params;
-    const { scent, longevity, sillage, packaging, value } = req.body;
+    const { smell, longevity, sillage, bottle, priceValue } = req.body;
 
     const perfume = await Perfume.findOne({ perfume_id });
     if (!perfume) {
@@ -618,11 +618,11 @@ export const addCategoryRatings = async (req: Request, res: Response): Promise<v
     }
 
     // Добавление оценок в соответствующие категории
-    perfume.scent_ratings.push(scent);
+    perfume.scent_ratings.push(smell);
     perfume.longevity_ratings.push(longevity);
     perfume.sillage_ratings.push(sillage);
-    perfume.packaging_ratings.push(packaging);
-    perfume.value_ratings.push(value);
+    perfume.packaging_ratings.push(bottle);
+    perfume.value_ratings.push(priceValue);
 
     // Обновляем счетчик оценок
     perfume.rating_count += 1;
