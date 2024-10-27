@@ -630,15 +630,16 @@ export const addCategoryRatings = async (req: Request, res: Response): Promise<v
     // Пересчет среднего значения для каждой категории
     const average = (arr: number[]) =>
       arr.reduce((sum, num) => sum + num, 0) / arr.length;
+
     const scentAvg = average(perfume.scent_ratings);
     const longevityAvg = average(perfume.longevity_ratings);
     const sillageAvg = average(perfume.sillage_ratings);
     const packagingAvg = average(perfume.packaging_ratings);
     const valueAvg = average(perfume.value_ratings);
 
-    // Обновляем rating_value как среднее от всех категорий
+    // Обновляем rating_value как среднее от всех категорий, масштабированное на 2
     perfume.rating_value =
-      (scentAvg + longevityAvg + sillageAvg + packagingAvg + valueAvg) / 5;
+      ((scentAvg + longevityAvg + sillageAvg + packagingAvg + valueAvg) / 5) * 2;
 
     await perfume.save();
 
