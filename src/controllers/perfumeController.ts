@@ -282,13 +282,21 @@ export const searchBrands = async (req: Request, res: Response): Promise<void> =
 
 export const getPerfumeById = async (req: Request, res: Response): Promise<void> => {
   try {
-    const perfume = await Perfume.findOne({ perfume_id: req.params.perfume_id });
+    const perfume = await Perfume.findOne({ perfume_id: req.params.perfume_id }).populate(
+      {
+        path: 'reviews.userId', // указываем путь к userId в reviews
+        select: 'username avatar', // выбираем только нужные поля
+      }
+    );
+
     if (!perfume) {
-      res.status(404).json({ message: 'Perfume not founde' });
+      res.status(404).json({ message: 'Парфюм не найден' });
       return;
     }
+
     res.json(perfume);
   } catch (err) {
+    console.error('Ошибка при получении парфюма:', err);
     res.status(500).json({ message: (err as Error).message });
   }
 };
