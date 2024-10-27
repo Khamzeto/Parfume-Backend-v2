@@ -682,6 +682,7 @@ export const getRecentReviews = async (req: Request, res: Response): Promise<voi
           perfume_id: 1, // ID парфюма
           main_image: 1, // Основное изображение парфюма
           'reviews.body': 1, // Текст отзыва
+          'user._id': 1, // ID пользователя (userId)
           'user.username': 1, // Никнейм пользователя
         },
       },
