@@ -13,7 +13,8 @@ import {
   getPerfumesByIds,
   getPerfumesWithSimilarAndSearch,
   getRecentPerfumes,
-  addReview, // Импортируем функцию для добавления отзыва
+  addReview,
+  addCategoryRatings, // Импортируем функцию для добавления отзыва
 } from '../controllers/perfumeController';
 
 const router = express.Router();
@@ -27,7 +28,7 @@ router.get('/recent', getRecentPerfumes);
 // Route for uploading gallery images
 router.post('/gallery/:perfumeId', uploadGalleryImages);
 router.get('/gallery/:perfumeId', getGalleryImages); // Get gallery images
-
+router.post('/perfumes/:perfume_id/rating', addCategoryRatings);
 // Route to retrieve perfumes by multiple IDs
 router.post('/by-ids', getPerfumesByIds);
 

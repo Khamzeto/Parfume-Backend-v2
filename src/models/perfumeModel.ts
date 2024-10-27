@@ -19,7 +19,7 @@ export interface IPerfume extends Document {
     base_notes: string[];
     additional_notes: string[];
   };
-  name_ru?: string; // Поле может быть необязательным
+  name_ru?: string;
   brand_ru?: string;
   release_year: number;
   gender: string;
@@ -29,16 +29,19 @@ export interface IPerfume extends Document {
   perfumers: string[];
   perfumers_en: string[];
   reviews: {
-    username: string;
-    nickname: string;
+    userId: mongoose.Types.ObjectId;
     body: string;
-    ratings: Record<string, any>;
-    awards: string;
-    comments: string;
-  }[]; // Update reviews to be an array of objects
+    createdAt: Date;
+  }[];
+  rating_count: number; // Количество оценок
+  rating_value: number; // Текущий средний рейтинг
+  scent_ratings: number[]; // Оценки по запаху
+  longevity_ratings: number[]; // Оценки по долголетию
+  sillage_ratings: number[]; // Оценки по шлейфу
+  packaging_ratings: number[]; // Оценки по упаковке
+  value_ratings: number[]; // Оценки по цене и качеству
 }
 
-// Определение схемы для коллекции "perfumes"
 // Определение схемы для коллекции "perfumes"
 const perfumeSchema: Schema = new Schema({
   name: { type: String, required: true },
@@ -70,6 +73,15 @@ const perfumeSchema: Schema = new Schema({
       createdAt: { type: Date, default: Date.now },
     },
   ],
+  rating_count: { type: Number, default: 0 }, // Количество оценок
+  rating_value: { type: Number, default: 0 }, // Текущий средний рейтинг
+
+  // Оценки по категориям
+  scent_ratings: { type: [Number], default: [] },
+  longevity_ratings: { type: [Number], default: [] },
+  sillage_ratings: { type: [Number], default: [] },
+  packaging_ratings: { type: [Number], default: [] },
+  value_ratings: { type: [Number], default: [] },
 });
 
 // Создаем текстовый индекс для полей "name" и "brand"

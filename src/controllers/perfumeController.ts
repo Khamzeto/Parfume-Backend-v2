@@ -606,3 +606,57 @@ export const addReview = async (req: Request, res: Response): Promise<void> => {
     res.status(500).json({ message: (err as Error).message });
   }
 };
+export const addCategoryRatings = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { perfume_id } = req.params;
+    const { scent, longevity, sillage, packaging, value } = req.body;
+
+    // Проверка, что все оценки в пределах 0-5
+    const isValidRating = (rating: number) => rating >= 0 && rating <= 5;
+    if (![scent, longevity, sillage, packaging, value].every(isValidRating)) {
+      res.status(400).json({ message: 'Все оценки должны быть в пределах от 0 до 5' });
+      return;
+    }
+
+    const perfume = await Perfume.findOne({ perfume_id });
+    if (!perfume) {
+      res.status(404).json({ message: 'Парфюм не найден' });
+      return;
+    }
+
+    // Добавление оценок в соответствующие категории
+    perfume.scent_ratings.push(scent);
+    perfume.longevity_ratings.push(longevity);
+    perfume.sillage_ratings.push(sillage);
+    perfume.packaging_ratings.push(packaging);
+    perfume.value_ratings.push(value);
+
+    // Обновляем счетчик оценок
+    perfume.rating_count += 1;
+
+    // Пересчет среднего значения для каждой категории
+    const average = (arr: number[]) =>
+      arr.reduce((sum, num) => sum + num, 0) / arr.length;
+    const scentAvg = average(perfume.scent_ratings);
+    const longevityAvg = average(perfume.longevity_ratings);
+    const sillageAvg = average(perfume.sillage_ratings);
+    const packagingAvg = average(perfume.packaging_ratings);
+    const valueAvg = average(perfume.value_ratings);
+
+    // Обновляем rating_value как среднее от всех категорий
+    perfume.rating_value =
+      (scentAvg + longevityAvg + sillageAvg + packagingAvg + valueAvg) / 5;
+
+    await perfume.save();
+
+    res.status(201).json({
+      message: 'Оценки добавлены и общий рейтинг обновлен',
+      rating_value: perfume.rating_value,
+      rating_count: perfume.rating_count,
+      averages: { scentAvg, longevityAvg, sillageAvg, packagingAvg, valueAvg },
+    });
+  } catch (err) {
+    console.error('Ошибка при добавлении оценок по категориям:', err);
+    res.status(500).json({ message: 'Ошибка при добавлении оценок по категориям' });
+  }
+};
