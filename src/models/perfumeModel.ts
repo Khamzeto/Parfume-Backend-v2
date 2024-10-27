@@ -1,5 +1,15 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
+// Интерфейс для индивидуальной оценки пользователя
+interface UserRating {
+  userId: mongoose.Types.ObjectId;
+  smell: number;
+  longevity: number;
+  sillage: number;
+  bottle: number;
+  priceValue: number;
+}
+
 // Интерфейс для парфюма
 export interface IPerfume extends Document {
   _id: mongoose.Types.ObjectId;
@@ -34,12 +44,13 @@ export interface IPerfume extends Document {
     createdAt: Date;
   }[];
   rating_count: number; // Количество оценок
-  rating_value: number; // Текущий средний рейтинг
+  rating_value: number; // Текущий средний рейтинг (масштабированный до 10)
   scent_ratings: number[]; // Оценки по запаху
   longevity_ratings: number[]; // Оценки по долголетию
   sillage_ratings: number[]; // Оценки по шлейфу
   packaging_ratings: number[]; // Оценки по упаковке
   value_ratings: number[]; // Оценки по цене и качеству
+  user_ratings: UserRating[]; // Массив для хранения уникальных оценок от пользователей
 }
 
 // Определение схемы для коллекции "perfumes"
@@ -74,7 +85,7 @@ const perfumeSchema: Schema = new Schema({
     },
   ],
   rating_count: { type: Number, default: 0 }, // Количество оценок
-  rating_value: { type: Number, default: 0 }, // Текущий средний рейтинг
+  rating_value: { type: Number, default: 0 }, // Текущий средний рейтинг (масштабированный до 10)
 
   // Оценки по категориям
   scent_ratings: { type: [Number], default: [] },
@@ -82,6 +93,18 @@ const perfumeSchema: Schema = new Schema({
   sillage_ratings: { type: [Number], default: [] },
   packaging_ratings: { type: [Number], default: [] },
   value_ratings: { type: [Number], default: [] },
+
+  // Уникальные оценки пользователей
+  user_ratings: [
+    {
+      userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+      smell: { type: Number, required: true },
+      longevity: { type: Number, required: true },
+      sillage: { type: Number, required: true },
+      bottle: { type: Number, required: true },
+      priceValue: { type: Number, required: true },
+    },
+  ],
 });
 
 // Создаем текстовый индекс для полей "name" и "brand"

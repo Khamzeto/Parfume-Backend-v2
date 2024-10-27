@@ -609,38 +609,42 @@ export const addReview = async (req: Request, res: Response): Promise<void> => {
 export const addCategoryRatings = async (req: Request, res: Response): Promise<void> => {
   try {
     const { perfume_id } = req.params;
-    const { smell, longevity, sillage, bottle, priceValue } = req.body;
+    const { userId, smell, longevity, sillage, bottle, priceValue } = req.body;
 
+    // Найти парфюм по его ID
     const perfume = await Perfume.findOne({ perfume_id });
     if (!perfume) {
       res.status(404).json({ message: 'Парфюм не найден' });
       return;
     }
 
-    // Добавление оценок в соответствующие категории
-    perfume.scent_ratings.push(smell);
-    perfume.longevity_ratings.push(longevity);
-    perfume.sillage_ratings.push(sillage);
-    perfume.packaging_ratings.push(bottle);
-    perfume.value_ratings.push(priceValue);
+    // Проверить, оценивал ли этот пользователь уже данный парфюм
+    if (perfume.user_ratings.some(rating => rating.userId.toString() === userId)) {
+      res.status(400).json({ message: 'Вы уже оценили этот парфюм' });
+      return;
+    }
 
-    // Обновляем счетчик оценок
+    // Добавление новых оценок от пользователя
+    perfume.user_ratings.push({ userId, smell, longevity, sillage, bottle, priceValue });
+
+    // Обновить счетчик оценок
     perfume.rating_count += 1;
 
-    // Пересчет среднего значения для каждой категории
+    // Пересчитать средние оценки для каждой категории
     const average = (arr: number[]) =>
       arr.reduce((sum, num) => sum + num, 0) / arr.length;
 
-    const scentAvg = average(perfume.scent_ratings);
-    const longevityAvg = average(perfume.longevity_ratings);
-    const sillageAvg = average(perfume.sillage_ratings);
-    const packagingAvg = average(perfume.packaging_ratings);
-    const valueAvg = average(perfume.value_ratings);
+    const scentAvg = average(perfume.user_ratings.map(rating => rating.smell));
+    const longevityAvg = average(perfume.user_ratings.map(rating => rating.longevity));
+    const sillageAvg = average(perfume.user_ratings.map(rating => rating.sillage));
+    const packagingAvg = average(perfume.user_ratings.map(rating => rating.bottle));
+    const valueAvg = average(perfume.user_ratings.map(rating => rating.priceValue));
 
-    // Обновляем rating_value как среднее от всех категорий, масштабированное на 2
+    // Обновить `rating_value` как среднее всех категорий, масштабированное на 2
     perfume.rating_value =
       ((scentAvg + longevityAvg + sillageAvg + packagingAvg + valueAvg) / 5) * 2;
 
+    // Сохранить изменения
     await perfume.save();
 
     res.status(201).json({
