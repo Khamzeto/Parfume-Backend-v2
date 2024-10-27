@@ -666,18 +666,10 @@ export const getRecentReviews = async (req: Request, res: Response): Promise<voi
       { $sort: { 'reviews.createdAt': -1 } }, // Сортировка по дате создания отзыва
       { $limit: 9 }, // Ограничиваем до 9 отзывов
       {
-        $lookup: {
-          from: 'users', // Переход к коллекции пользователей
-          localField: 'reviews.userId',
-          foreignField: '_id',
-          as: 'userInfo',
-        },
-      },
-      {
         $project: {
           _id: 0,
-          perfume_id: '$perfume_id', // ID парфюма
-          'userInfo.username': 1, // Имя пользователя
+          perfume_id: 1, // ID парфюма
+          main_image: 1, // Основное изображение парфюма
           'reviews.body': 1, // Текст отзыва
         },
       },
