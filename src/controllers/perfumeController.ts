@@ -658,3 +658,47 @@ export const addCategoryRatings = async (req: Request, res: Response): Promise<v
     res.status(500).json({ message: 'Ошибка при добавлении оценок по категориям' });
   }
 };
+export const getRecentReviews = async (req: Request, res: Response): Promise<void> => {
+  try {
+    // Получаем последние 9 отзывов по всем парфюмам, сортируя их по дате создания
+    const recentReviews = await Perfume.aggregate([
+      // Разворачиваем массив отзывов, чтобы каждый отзыв был отдельным документом
+      { $unwind: '$reviews' },
+      // Сортируем отзывы по дате создания в порядке убывания
+      { $sort: { 'reviews.createdAt': -1 } },
+      // Оставляем только последние 9 отзывов
+      { $limit: 9 },
+      // Присоединяем информацию о пользователе
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'reviews.userId',
+          foreignField: '_id',
+          as: 'userInfo',
+        },
+      },
+      {
+        $unwind: '$userInfo',
+      },
+      // Форматируем результат, чтобы включить данные о парфюме и пользователе
+      {
+        $project: {
+          'userInfo._id': 1,
+          'userInfo.username': 1,
+          'userInfo.avatar': 1,
+          'reviews.body': 1,
+          'reviews.createdAt': 1,
+          name: 1,
+          brand: 1,
+          perfume_id: 1,
+          main_image: 1,
+        },
+      },
+    ]);
+
+    res.status(200).json({ reviews: recentReviews });
+  } catch (err) {
+    console.error('Ошибка при получении последних отзывов:', err);
+    res.status(500).json({ message: 'Ошибка при получении последних отзывов' });
+  }
+};
