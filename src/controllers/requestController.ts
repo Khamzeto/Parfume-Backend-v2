@@ -23,8 +23,27 @@ export const createRequest = async (req: Request, res: Response): Promise<void> 
 // Получение всех заявок
 export const getAllRequests = async (req: Request, res: Response): Promise<void> => {
   try {
-    const requests = await RequestModel.find().populate('perfumeId');
-    res.json(requests);
+    // Получаем значения page и limit из запроса, задаем их по умолчанию
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const skip = (page - 1) * limit;
+
+    // Находим заявки с учетом пагинации
+    const requests = await RequestModel.find()
+      .populate('perfumeId')
+      .skip(skip)
+      .limit(limit);
+
+    // Общее количество заявок для информации о пагинации
+    const totalRequests = await RequestModel.countDocuments();
+    const totalPages = Math.ceil(totalRequests / limit);
+
+    res.json({
+      requests,
+      totalPages,
+      currentPage: page,
+      totalRequests,
+    });
   } catch (err) {
     res.status(500).json({ message: 'Ошибка при получении заявок.' });
   }
