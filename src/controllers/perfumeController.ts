@@ -660,43 +660,37 @@ export const addCategoryRatings = async (req: Request, res: Response): Promise<v
 };
 export const getRecentReviews = async (req: Request, res: Response): Promise<void> => {
   try {
-    // Получаем последние 9 отзывов по всем парфюмам, сортируя их по дате создания
+    // Ищем последние 9 отзывов по всем парфюмам, сортируя по дате создания
     const recentReviews = await Perfume.aggregate([
-      // Разворачиваем массив отзывов, чтобы каждый отзыв был отдельным документом
-      { $unwind: '$reviews' },
-      // Сортируем отзывы по дате создания в порядке убывания
-      { $sort: { 'reviews.createdAt': -1 } },
-      // Оставляем только последние 9 отзывов
-      { $limit: 9 },
-      // Присоединяем информацию о пользователе
+      { $unwind: '$reviews' }, // Разворачиваем массив отзывов
+      { $sort: { 'reviews.createdAt': -1 } }, // Сортировка по дате создания отзыва
+      { $limit: 9 }, // Ограничиваем до 9 отзывов
       {
         $lookup: {
-          from: 'users',
+          from: 'users', // Переход к коллекции пользователей
           localField: 'reviews.userId',
           foreignField: '_id',
           as: 'userInfo',
         },
       },
       {
-        $unwind: '$userInfo',
-      },
-      // Форматируем результат, чтобы включить данные о парфюме и пользователе
-      {
         $project: {
-          'userInfo._id': 1,
-          'userInfo.username': 1,
-          'userInfo.avatar': 1,
-          'reviews.body': 1,
-          'reviews.createdAt': 1,
-          name: 1,
-          brand: 1,
-          perfume_id: 1,
-          main_image: 1,
+          _id: 0,
+          perfume_id: '$perfume_id', // ID парфюма
+          'userInfo.avatar': 1, // Фото пользователя
+          'userInfo.username': 1, // Имя пользователя
+          'reviews.body': 1, // Текст отзыва
         },
       },
     ]);
 
-    res.status(200).json({ reviews: recentReviews });
+    // Проверка на случай, если отзывы не найдены
+    if (!recentReviews.length) {
+      res.status(404).json({ message: 'Отзывы не найдены' });
+      return;
+    }
+
+    res.json(recentReviews);
   } catch (err) {
     console.error('Ошибка при получении последних отзывов:', err);
     res.status(500).json({ message: 'Ошибка при получении последних отзывов' });
