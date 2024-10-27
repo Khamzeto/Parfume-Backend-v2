@@ -9,6 +9,8 @@ import {
   addToCollection,
   removeFromCollection,
   getUserCollections,
+  getUserWishlist,
+  getUserPerfumeCollection,
 } from '../controllers/authController';
 
 const router = express.Router();
@@ -36,6 +38,8 @@ router.post('/wishlist/:id', addToWishlist);
 
 // Удаление парфюма из списка "Я хочу"
 router.delete('/wishlist/:id', removeFromWishlist);
+router.get('/:userId/wishlist', getUserWishlist);
+router.get('/:userId/collection', getUserPerfumeCollection);
 
 router.get('/:userId/collections', getUserCollections);
 

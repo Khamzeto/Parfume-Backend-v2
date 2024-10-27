@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import { Request, Response } from 'express';
 import { validationResult } from 'express-validator';
 import User, { IUser } from '../models/userModel';
+import perfumeModel from '../models/perfumeModel';
 
 // Настройка Nodemailer
 const transporter = nodemailer.createTransport({
@@ -415,6 +416,57 @@ export const getUserCollections = async (
   } catch (error) {
     return res.status(500).json({
       message: 'Ошибка сервера при получении данных пользователя',
+      error: error instanceof Error ? error.message : 'Неизвестная ошибка',
+    });
+  }
+};
+export const getUserWishlist = async (req: Request, res: Response): Promise<Response> => {
+  const { userId } = req.params;
+
+  try {
+    const user = await User.findById(userId).populate({
+      path: 'wishlist',
+      model: perfumeModel,
+      select: 'name brand description releaseYear', // Поля, которые хотите получить
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: 'Пользователь не найден' });
+    }
+
+    return res.status(200).json({
+      wishlist: user.wishlist,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: 'Ошибка сервера при получении данных wishlist',
+      error: error instanceof Error ? error.message : 'Неизвестная ошибка',
+    });
+  }
+};
+export const getUserPerfumeCollection = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  const { userId } = req.params;
+
+  try {
+    const user = await User.findById(userId).populate({
+      path: 'perfumeCollection',
+      model: perfumeModel,
+      select: 'name brand description releaseYear', // Поля, которые хотите получить
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: 'Пользователь не найден' });
+    }
+
+    return res.status(200).json({
+      perfumeCollection: user.perfumeCollection,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: 'Ошибка сервера при получении данных коллекции',
       error: error instanceof Error ? error.message : 'Неизвестная ошибка',
     });
   }
