@@ -611,13 +611,6 @@ export const addCategoryRatings = async (req: Request, res: Response): Promise<v
     const { perfume_id } = req.params;
     const { scent, longevity, sillage, packaging, value } = req.body;
 
-    // Уменьшение строгости валидации, разрешая небольшие отклонения
-    const isValidRating = (rating: number) => rating >= -0.1 && rating <= 5.1;
-    if (![scent, longevity, sillage, packaging, value].every(isValidRating)) {
-      res.status(400).json({ message: 'Все оценки должны быть в пределах от 0 до 5' });
-      return;
-    }
-
     const perfume = await Perfume.findOne({ perfume_id });
     if (!perfume) {
       res.status(404).json({ message: 'Парфюм не найден' });
