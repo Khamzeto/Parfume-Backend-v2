@@ -394,3 +394,28 @@ export const removeRole = async (req: Request, res: Response): Promise<void> => 
     res.status(500).json({ message: 'Ошибка при удалении роли.', error: errorMessage });
   }
 };
+// Получение списка желаемого и коллекции пользователя по userId
+export const getUserCollections = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  const { userId } = req.params;
+
+  try {
+    const user: IUser | null = await User.findById(userId, 'wishlist perfumeCollection'); // Находим пользователя и возвращаем только нужные поля
+
+    if (!user) {
+      return res.status(404).json({ message: 'Пользователь не найден' });
+    }
+
+    return res.status(200).json({
+      wishlist: user.wishlist,
+      perfumeCollection: user.perfumeCollection,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: 'Ошибка сервера при получении данных пользователя',
+      error: error instanceof Error ? error.message : 'Неизвестная ошибка',
+    });
+  }
+};
