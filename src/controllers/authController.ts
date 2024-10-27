@@ -424,18 +424,21 @@ export const getUserWishlist = async (req: Request, res: Response): Promise<Resp
   const { userId } = req.params;
 
   try {
-    const user = await User.findById(userId).populate({
-      path: 'wishlist',
-      model: perfumeModel,
-      select: 'name brand description releaseYear', // Поля, которые хотите получить
-    });
+    const user = await User.findById(userId);
 
     if (!user) {
       return res.status(404).json({ message: 'Пользователь не найден' });
     }
 
+    // Используем perfume_id для поиска
+    const wishlistPerfumes = await perfumeModel
+      .find({
+        perfume_id: { $in: user.wishlist },
+      })
+      .select('name brand description releaseYear');
+
     return res.status(200).json({
-      wishlist: user.wishlist,
+      wishlist: wishlistPerfumes,
     });
   } catch (error) {
     return res.status(500).json({
@@ -451,18 +454,19 @@ export const getUserPerfumeCollection = async (
   const { userId } = req.params;
 
   try {
-    const user = await User.findById(userId).populate({
-      path: 'perfumeCollection',
-      model: perfumeModel,
-      select: 'name brand description releaseYear', // Поля, которые хотите получить
-    });
+    const user = await User.findById(userId);
 
     if (!user) {
       return res.status(404).json({ message: 'Пользователь не найден' });
     }
 
+    // Используем perfume_id для поиска
+    const collectionPerfumes = await perfumeModel
+      .find({ perfume_id: { $in: user.perfumeCollection } })
+      .select('name brand description releaseYear');
+
     return res.status(200).json({
-      perfumeCollection: user.perfumeCollection,
+      perfumeCollection: collectionPerfumes,
     });
   } catch (error) {
     return res.status(500).json({
