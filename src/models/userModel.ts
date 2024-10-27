@@ -7,13 +7,14 @@ export interface IUser extends Document {
   password?: string;
   vkId?: string;
   googleId?: string;
-  avatar?: string; // Avatar field added
+  avatar?: string;
+  description?: string; // Поле для описания
   createdAt: Date;
   roles: string[];
-  wishlist: string[]; // Array for perfume IDs
-  perfumeCollection: string[]; // Array for perfume IDs user owns
-  isActivated: boolean; // Account activation status
-  activationCode: string; // Code sent to user for email confirmation
+  wishlist: string[];
+  perfumeCollection: string[];
+  isActivated: boolean;
+  activationCode: string;
   isValidPassword(password: string): Promise<boolean>;
 }
 
@@ -49,6 +50,10 @@ const UserSchema: Schema<IUser> = new Schema({
   avatar: {
     type: String,
   },
+  description: {
+    type: String,
+    default: '', // По умолчанию пустое описание
+  },
   createdAt: {
     type: Date,
     default: Date.now,
@@ -63,13 +68,11 @@ const UserSchema: Schema<IUser> = new Schema({
   },
   isActivated: {
     type: Boolean,
-    default: false, // По умолчанию аккаунт не активирован
+    default: false,
   },
   activationCode: {
-    type: String, // Поле для хранения кода активации
+    type: String,
   },
 });
-
-// Хэширование пароля перед сохранением
 
 export default mongoose.model<IUser>('User', UserSchema);

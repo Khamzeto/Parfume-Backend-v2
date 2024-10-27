@@ -202,7 +202,7 @@ export const getUserById = async (req: Request, res: Response): Promise<Response
 
 // Обновление данных пользователя
 export const updateUser = async (req: Request, res: Response): Promise<Response> => {
-  const { username, email, avatar, roles } = req.body;
+  const { username, email, avatar, roles, description } = req.body; // Добавлено поле description
   const userId = req.params.id;
 
   try {
@@ -214,9 +214,10 @@ export const updateUser = async (req: Request, res: Response): Promise<Response>
     // Update fields if provided
     user.username = username || user.username;
     user.email = email || user.email;
-    user.avatar = avatar || user.avatar; // Update avatar
+    user.avatar = avatar || user.avatar;
+    user.description = description || user.description; // Обновление описания
     if (roles) {
-      user.roles = Array.isArray(roles) ? roles : [roles]; // Update roles if provided
+      user.roles = Array.isArray(roles) ? roles : [roles];
     }
 
     await user.save();
@@ -228,11 +229,40 @@ export const updateUser = async (req: Request, res: Response): Promise<Response>
         username: user.username,
         email: user.email,
         avatar: user.avatar,
+        description: user.description, // Добавлено описание в ответ
         roles: user.roles,
       },
     });
   } catch (err: any) {
     return res.status(500).json({ msg: 'Ошибка сервера', error: err.message });
+  }
+};
+export const changePassword = async (req: Request, res: Response): Promise<Response> => {
+  const { userId } = req.params; // ID пользователя
+  const { oldPassword, newPassword } = req.body; // Старый и новый пароли
+
+  try {
+    // Проверяем, существует ли пользователь
+    const user: IUser | null = await User.findById(userId);
+    if (!user || !user.password) {
+      return res
+        .status(404)
+        .json({ msg: 'Пользователь не найден или пароль не установлен' });
+    }
+
+    // Проверяем, совпадает ли старый пароль
+    const isMatch = await argon2.verify(user.password, oldPassword);
+    if (!isMatch) {
+      return res.status(400).json({ msg: 'Неправильный старый пароль' });
+    }
+
+    // Хэшируем новый пароль и сохраняем его
+    user.password = await argon2.hash(newPassword);
+    await user.save();
+
+    return res.status(200).json({ msg: 'Пароль успешно изменен' });
+  } catch (error: any) {
+    return res.status(500).json({ msg: 'Ошибка сервера', error: error.message });
   }
 };
 

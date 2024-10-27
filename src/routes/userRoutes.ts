@@ -11,6 +11,7 @@ import {
   getUserCollections,
   getUserWishlist,
   getUserPerfumeCollection,
+  changePassword,
 } from '../controllers/authController';
 
 const router = express.Router();
@@ -40,7 +41,7 @@ router.post('/wishlist/:id', addToWishlist);
 router.delete('/wishlist/:id', removeFromWishlist);
 router.get('/:userId/wishlist', getUserWishlist);
 router.get('/:userId/collection', getUserPerfumeCollection);
-
+router.put('/:userId/change-password', changePassword);
 router.get('/:userId/collections', getUserCollections);
 
 export default router;
