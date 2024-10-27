@@ -28,9 +28,10 @@ export const getAllRequests = async (req: Request, res: Response): Promise<void>
     const limit = parseInt(req.query.limit as string) || 10;
     const skip = (page - 1) * limit;
 
-    // Находим заявки с учетом пагинации
+    // Находим заявки с учетом пагинации и сортировки по createdAt (последние раньше)
     const requests = await RequestModel.find()
       .populate('perfumeId')
+      .sort({ createdAt: -1 }) // Сортировка по убыванию времени создания
       .skip(skip)
       .limit(limit);
 
