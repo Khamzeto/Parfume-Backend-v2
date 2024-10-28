@@ -285,7 +285,7 @@ export const getPerfumeById = async (req: Request, res: Response): Promise<void>
     const perfume = await Perfume.findOne({ perfume_id: req.params.perfume_id }).populate(
       {
         path: 'reviews.userId', // указываем путь к userId в reviews
-        select: 'username avatar', // выбираем только нужные поля
+        select: 'username', // выбираем только нужные поля
       }
     );
 
