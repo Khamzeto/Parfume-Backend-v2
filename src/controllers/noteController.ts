@@ -355,3 +355,22 @@ export const addNote = async (req: Request, res: Response): Promise<void> => {
     res.status(500).json({ message: 'Failed to add note', error: err });
   }
 };
+export const getNoteIdByName = async (req: Request, res: Response): Promise<void> => {
+  const { name } = req.params; // Получаем имя ноты из параметров запроса
+
+  try {
+    // Ищем ноту по имени
+    const note = await noteModel.findOne({ name });
+
+    if (!note) {
+      res.status(404).json({ message: 'Note not found' });
+      return;
+    }
+
+    // Возвращаем только _id найденной ноты
+    res.status(200).json({ noteId: note._id });
+  } catch (err) {
+    console.error('Ошибка при получении noteId:', err);
+    res.status(500).json({ message: 'Failed to get note ID', error: err });
+  }
+};
