@@ -109,10 +109,10 @@ export const getApprovedRequestsByUserId = async (
   const { userId } = req.params;
 
   try {
-    // Находим только одобренные заявки пользователя и получаем только необходимые поля
+    // Находим только одобренные заявки пользователя
     const requests = await RequestModel.find({ userId, status: 'approved' })
       .sort({ createdAt: -1 })
-      .select('changes createdAt updatedAt');
+      .select('createdAt updatedAt perfumeId'); // Добавляем perfumeId и исключаем changes
 
     if (requests.length === 0) {
       res
@@ -124,7 +124,7 @@ export const getApprovedRequestsByUserId = async (
     // Извлекаем уникальные perfume_id из заявок
     const perfumeIds = requests.map(request => request.perfumeId);
 
-    // Находим соответствующие парфюмы по perfume_id и берем только нужные поля name и brand
+    // Находим соответствующие парфюмы по perfume_id и берем только поля name и brand
     const perfumes = await Perfume.find(
       { perfume_id: { $in: perfumeIds } },
       'name brand perfume_id'
@@ -132,17 +132,22 @@ export const getApprovedRequestsByUserId = async (
 
     // Создаем карту для быстрого доступа к парфюмам по perfume_id
     const perfumeMap = perfumes.reduce((map, perfume) => {
-      map[perfume.perfume_id] = perfume;
+      map[perfume.perfume_id] = {
+        name: perfume.name,
+        brand: perfume.brand,
+        perfume_id: perfume.perfume_id,
+      };
       return map;
-    }, {} as Record<string, { name: string; brand: string }>);
+    }, {} as Record<string, { name: string; brand: string; perfume_id: string }>);
 
-    // Добавляем имя и бренд парфюма к каждой заявке, исключая ненужные поля
+    // Добавляем только нужные поля к каждой заявке, исключая changes
     const requestsWithPerfumeInfo = requests.map(request => ({
-      changes: request.changes,
       createdAt: request.createdAt,
       updatedAt: request.updatedAt,
+      perfumeId: request.perfumeId,
       perfumeName: perfumeMap[request.perfumeId]?.name,
       perfumeBrand: perfumeMap[request.perfumeId]?.brand,
+      perfumeUniqueId: perfumeMap[request.perfumeId]?.perfume_id,
     }));
 
     res.json({ requests: requestsWithPerfumeInfo });
