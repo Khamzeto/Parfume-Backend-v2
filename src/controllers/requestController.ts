@@ -4,11 +4,12 @@ import RequestModel from '../models/requestModel'; // Модель заявки
 
 // Создание заявки
 export const createRequest = async (req: Request, res: Response): Promise<void> => {
-  const { perfumeId, changes } = req.body;
+  const { perfumeId, changes, userId } = req.body; // Получаем userId из тела запроса
 
   try {
     const newRequest = new RequestModel({
       perfumeId,
+      userId, // Сохраняем userId
       changes,
       status: 'pending',
     });
@@ -99,5 +100,54 @@ export const deleteRequest = async (req: Request, res: Response): Promise<void> 
     res.json({ message: 'Заявка удалена.' });
   } catch (err) {
     res.status(500).json({ message: 'Ошибка при удалении заявки.' });
+  }
+};
+export const getApprovedRequestsByUserId = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const { userId } = req.params;
+
+  try {
+    // Находим только одобренные заявки пользователя
+    const requests = await RequestModel.find({ userId, status: 'approved' }).sort({
+      createdAt: -1,
+    });
+
+    if (requests.length === 0) {
+      res
+        .status(404)
+        .json({ message: 'Одобренные заявки не найдены для данного пользователя.' });
+      return;
+    }
+
+    // Извлекаем уникальные perfume_id из заявок
+    const perfumeIds = requests.map(request => request.perfumeId);
+
+    // Находим соответствующие парфюмы по perfume_id и берем только поля name и brand
+    const perfumes = await Perfume.find(
+      { perfume_id: { $in: perfumeIds } },
+      'name brand perfume_id'
+    );
+
+    // Создаем карту для быстрого доступа к парфюмам по perfume_id
+    const perfumeMap = perfumes.reduce((map, perfume) => {
+      map[perfume.perfume_id] = perfume;
+      return map;
+    }, {} as Record<string, { name: string; brand: string; perfume_id: string }>);
+
+    // Добавляем имя и бренд парфюма к каждой заявке
+    const requestsWithPerfumeInfo = requests.map(request => ({
+      ...request.toObject(),
+      perfumeName: perfumeMap[request.perfumeId]?.name,
+      perfumeBrand: perfumeMap[request.perfumeId]?.brand,
+    }));
+
+    res.json({ requests: requestsWithPerfumeInfo });
+  } catch (err) {
+    console.error('Ошибка при получении одобренных заявок пользователя:', err);
+    res
+      .status(500)
+      .json({ message: 'Ошибка при получении одобренных заявок пользователя.' });
   }
 };
