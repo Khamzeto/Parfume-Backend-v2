@@ -112,7 +112,7 @@ export const getApprovedRequestsByUserId = async (
     // Находим только одобренные заявки пользователя
     const requests = await RequestModel.find({ userId, status: 'approved' })
       .sort({ createdAt: -1 })
-      .select('createdAt updatedAt perfumeId'); // Добавляем perfumeId и исключаем changes
+      .select('createdAt updatedAt perfumeId changes'); // Подключаем changes для получения name и brand
 
     if (requests.length === 0) {
       res
@@ -121,33 +121,13 @@ export const getApprovedRequestsByUserId = async (
       return;
     }
 
-    // Извлекаем уникальные perfume_id из заявок
-    const perfumeIds = requests.map(request => request.perfumeId);
-
-    // Находим соответствующие парфюмы по perfume_id и берем только поля name и brand
-    const perfumes = await Perfume.find(
-      { perfume_id: { $in: perfumeIds } },
-      'name brand perfume_id'
-    );
-
-    // Создаем карту для быстрого доступа к парфюмам по perfume_id
-    const perfumeMap = perfumes.reduce((map, perfume) => {
-      map[perfume.perfume_id] = {
-        name: perfume.name,
-        brand: perfume.brand,
-        perfume_id: perfume.perfume_id,
-      };
-      return map;
-    }, {} as Record<string, { name: string; brand: string; perfume_id: string }>);
-
-    // Добавляем только нужные поля к каждой заявке, исключая changes
+    // Формируем ответ, добавляя `name` и `brand` из `changes`, если они там есть
     const requestsWithPerfumeInfo = requests.map(request => ({
       createdAt: request.createdAt,
       updatedAt: request.updatedAt,
-      perfumeId: request.perfumeId,
-      perfumeName: perfumeMap[request.perfumeId]?.name,
-      perfumeBrand: perfumeMap[request.perfumeId]?.brand,
-      perfumeUniqueId: perfumeMap[request.perfumeId]?.perfume_id,
+      perfumeId: request.changes?.perfume_id,
+      perfumeName: request.changes?.name, // Берем name из changes
+      perfumeBrand: request.changes?.brand, // Берем brand из changes
     }));
 
     res.json({ requests: requestsWithPerfumeInfo });
