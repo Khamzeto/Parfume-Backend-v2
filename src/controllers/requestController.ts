@@ -109,10 +109,10 @@ export const getApprovedRequestsByUserId = async (
   const { userId } = req.params;
 
   try {
-    // Находим только одобренные заявки пользователя
-    const requests = await RequestModel.find({ userId, status: 'approved' }).sort({
-      createdAt: -1,
-    });
+    // Находим только одобренные заявки пользователя и получаем только необходимые поля
+    const requests = await RequestModel.find({ userId, status: 'approved' })
+      .sort({ createdAt: -1 })
+      .select('changes createdAt updatedAt');
 
     if (requests.length === 0) {
       res
@@ -124,7 +124,7 @@ export const getApprovedRequestsByUserId = async (
     // Извлекаем уникальные perfume_id из заявок
     const perfumeIds = requests.map(request => request.perfumeId);
 
-    // Находим соответствующие парфюмы по perfume_id и берем только поля name и brand
+    // Находим соответствующие парфюмы по perfume_id и берем только нужные поля name и brand
     const perfumes = await Perfume.find(
       { perfume_id: { $in: perfumeIds } },
       'name brand perfume_id'
@@ -134,11 +134,13 @@ export const getApprovedRequestsByUserId = async (
     const perfumeMap = perfumes.reduce((map, perfume) => {
       map[perfume.perfume_id] = perfume;
       return map;
-    }, {} as Record<string, { name: string; brand: string; perfume_id: string }>);
+    }, {} as Record<string, { name: string; brand: string }>);
 
-    // Добавляем имя и бренд парфюма к каждой заявке
+    // Добавляем имя и бренд парфюма к каждой заявке, исключая ненужные поля
     const requestsWithPerfumeInfo = requests.map(request => ({
-      ...request.toObject(),
+      changes: request.changes,
+      createdAt: request.createdAt,
+      updatedAt: request.updatedAt,
       perfumeName: perfumeMap[request.perfumeId]?.name,
       perfumeBrand: perfumeMap[request.perfumeId]?.brand,
     }));
