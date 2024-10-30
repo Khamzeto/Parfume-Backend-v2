@@ -125,6 +125,7 @@ export const getApprovedRequestsByUserId = async (
     const requestsWithPerfumeInfo = requests.map(request => ({
       createdAt: request.createdAt,
       updatedAt: request.updatedAt,
+      image: request.changes?.main_image,
       perfumeId: request.changes?.perfume_id,
       perfumeName: request.changes?.name, // Берем name из changes
       perfumeBrand: request.changes?.brand, // Берем brand из changes
