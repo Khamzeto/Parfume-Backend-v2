@@ -32,6 +32,7 @@ const allowedOrigins = [
   'http://172.20.10.2:3001',
   'http://172.20.10.5:3001',
   'http://81.29.136.136:3000',
+  'https://parfumetrika.ru/',
 ];
 passportConfig(passport);
 dotenv.config();
