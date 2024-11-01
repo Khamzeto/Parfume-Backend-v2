@@ -571,18 +571,18 @@ export const getRecentPerfumes = async (req: Request, res: Response): Promise<vo
 };
 export const addReview = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { perfume_id } = req.params; // Получаем perfume_id из параметров маршрута
+    const { perfume_id } = req.params; // Get perfume_id from route parameters
     const { userId, body } = req.body;
 
-    // Проверяем, что все обязательные поля заполнены
+    // Check that all required fields are filled
     if (!userId || !body) {
       res.status(400).json({ message: 'userId и body обязательны для отзыва' });
       return;
     }
 
-    // Находим парфюм по полю perfume_id и добавляем отзыв
+    // Find the perfume by perfume_id and add the review
     const perfume = await Perfume.findOneAndUpdate(
-      { perfume_id }, // Используем perfume_id для поиска
+      { perfume_id },
       {
         $push: {
           reviews: {
@@ -593,7 +593,7 @@ export const addReview = async (req: Request, res: Response): Promise<void> => {
         },
       },
       { new: true }
-    ).populate('reviews.userId', 'username avatar'); // Подгружаем информацию о пользователе
+    );
 
     if (!perfume) {
       res.status(404).json({ message: 'Парфюм не найден' });
