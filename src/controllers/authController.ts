@@ -168,7 +168,68 @@ export const login = async (req: Request, res: Response): Promise<Response> => {
     return res.status(500).json({ msg: 'Ошибка сервера', error: err.message });
   }
 };
+export const adminLogin = async (req: Request, res: Response): Promise<Response> => {
+  // Проверка на наличие ошибок валидации
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
 
+  const { email, password } = req.body;
+
+  try {
+    // Поиск пользователя по email
+    const user: IUser | null = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(400).json({ msg: 'Неправильный email или пароль' });
+    }
+
+    // Проверяем, активирован ли аккаунт
+    if (!user.isActivated) {
+      return res
+        .status(400)
+        .json({ msg: 'Аккаунт не активирован. Проверьте свою почту.' });
+    }
+
+    // Проверяем, есть ли у пользователя роль 'admin'
+    if (!user.roles.includes('admin')) {
+      return res
+        .status(403)
+        .json({ msg: 'Доступ запрещен. У вас нет прав администратора.' });
+    }
+
+    // Проверяем, что пароль определён
+    if (!user.password) {
+      return res.status(400).json({ msg: 'Пароль отсутствует для этого пользователя' });
+    }
+
+    // Сравниваем пароли с использованием argon2
+    const isMatch = await argon2.verify(user.password, password.trim());
+
+    if (!isMatch) {
+      return res.status(400).json({ msg: 'Неправильный email или пароль' });
+    }
+
+    // Создание JWT токена с информацией о роли
+    const token = jwt.sign({ id: user._id, roles: user.roles }, jwtSecret, {
+      expiresIn: '1h',
+    });
+
+    return res.json({
+      msg: 'Успешный вход администратора',
+      token,
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        roles: user.roles,
+      },
+    });
+  } catch (err: any) {
+    return res.status(500).json({ msg: 'Ошибка сервера', error: err.message });
+  }
+};
 export const logout = (req: Request, res: Response): void => {
   req.logout(err => {
     if (err) {

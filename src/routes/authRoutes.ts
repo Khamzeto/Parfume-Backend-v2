@@ -14,6 +14,7 @@ import {
   removeRole,
   updateUser,
   activateAccount,
+  adminLogin,
 } from '../controllers/authController';
 import jwt from 'jsonwebtoken';
 import { jwtSecret } from '../config';
@@ -43,6 +44,7 @@ router.post(
 
 // Логин пользователя
 router.post('/login', login);
+router.post('/admin', adminLogin);
 router.post('/activate', activateAccount);
 
 // Выход
