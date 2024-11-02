@@ -34,6 +34,7 @@ const allowedOrigins = [
   'http://81.29.136.136:3000',
   'https://parfumetrika.ru',
   'https://www.parfumetrika.ru',
+  'https://hltdot.parfumetrika.ru',
 ];
 passportConfig(passport);
 dotenv.config();
