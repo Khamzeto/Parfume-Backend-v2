@@ -122,7 +122,8 @@ export const getPerfumesByParfumer = async (
       return;
     }
 
-    const parfumer = parfumerRecord.original; // Получаем оригинальное имя парфюмера
+    const parfumer = parfumerRecord.original; // Получаем оригинальное имя парфюмера (английское)
+    const parfumer_ru = parfumerRecord.original_ru; // Получаем имя парфюмера на русском
 
     // Фильтр духов по гендеру (если указан)
     const filters: any = {
@@ -160,12 +161,13 @@ export const getPerfumesByParfumer = async (
       return;
     }
 
-    // Возвращаем духи, имя парфюмера и общее количество духов
+    // Возвращаем духи, имя парфюмера на английском и русском, а также общее количество духов
     res.json({
       parfumer,
+      parfumer_ru, // Добавляем имя парфюмера на русском
       perfumes,
       total: totalPerfumes,
-      count: perfumes.length, // Выводим количество парфюмов на текущей странице
+      count: perfumes.length, // Количество парфюмов на текущей странице
     });
   } catch (err) {
     res.status(500).json({ message: (err as Error).message });
