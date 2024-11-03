@@ -10,6 +10,14 @@ interface UserRating {
   priceValue: number;
 }
 
+// Интерфейс для отзыва
+interface Review {
+  _id: mongoose.Types.ObjectId;
+  userId: mongoose.Types.ObjectId;
+  body: string;
+  createdAt: Date;
+}
+
 // Интерфейс для парфюма
 export interface IPerfume extends Document {
   _id: mongoose.Types.ObjectId;
@@ -38,22 +46,24 @@ export interface IPerfume extends Document {
   gallery_images: string[];
   perfumers: string[];
   perfumers_en: string[];
-  reviews: {
-    userId: mongoose.Types.ObjectId;
-    body: string;
-    createdAt: Date;
-  }[];
-  rating_count: number; // Количество оценок
-  rating_value: number; // Текущий средний рейтинг (масштабированный до 10)
-  scent_ratings: number[]; // Оценки по запаху
-  longevity_ratings: number[]; // Оценки по долголетию
-  sillage_ratings: number[]; // Оценки по шлейфу
-  packaging_ratings: number[]; // Оценки по упаковке
-  value_ratings: number[]; // Оценки по цене и качеству
-  user_ratings: UserRating[]; // Массив для хранения уникальных оценок от пользователей
+  reviews: Review[];
+  rating_count: number;
+  rating_value: number;
+  scent_ratings: number[];
+  longevity_ratings: number[];
+  sillage_ratings: number[];
+  packaging_ratings: number[];
+  value_ratings: number[];
+  user_ratings: UserRating[];
 }
 
 // Определение схемы для коллекции "perfumes"
+const reviewSchema = new Schema({
+  userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+  body: { type: String, required: true },
+  createdAt: { type: Date, default: Date.now },
+});
+
 const perfumeSchema: Schema = new Schema({
   name: { type: String, required: true },
   brand: { type: String, required: true },
@@ -77,24 +87,14 @@ const perfumeSchema: Schema = new Schema({
   gallery_images: [String],
   perfumers: [String],
   perfumers_en: [String],
-  reviews: [
-    {
-      userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-      body: { type: String, required: true },
-      createdAt: { type: Date, default: Date.now },
-    },
-  ],
-  rating_count: { type: Number, default: 0 }, // Количество оценок
-  rating_value: { type: Number, default: 0 }, // Текущий средний рейтинг (масштабированный до 10)
-
-  // Оценки по категориям
+  reviews: [reviewSchema],
+  rating_count: { type: Number, default: 0 },
+  rating_value: { type: Number, default: 0 },
   scent_ratings: { type: [Number], default: [] },
   longevity_ratings: { type: [Number], default: [] },
   sillage_ratings: { type: [Number], default: [] },
   packaging_ratings: { type: [Number], default: [] },
   value_ratings: { type: [Number], default: [] },
-
-  // Уникальные оценки пользователей
   user_ratings: [
     {
       userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },

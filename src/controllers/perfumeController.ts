@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import Perfume from '../models/perfumeModel';
+import Perfume, { IPerfume } from '../models/perfumeModel';
 import Fuse from 'fuse.js';
 import { transliterate as tr, slugify } from 'transliteration';
 import axios from 'axios';
@@ -759,5 +759,45 @@ export const getAllReviews = async (req: Request, res: Response): Promise<void> 
   } catch (err) {
     console.error('Ошибка при получении всех отзывов:', err);
     res.status(500).json({ message: 'Ошибка при получении всех отзывов' });
+  }
+};
+export const deleteReview = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { perfume_id, reviewId } = req.params;
+
+    // Проверяем, что переданы оба параметра
+    if (!perfume_id || !reviewId) {
+      res.status(400).json({ message: 'Необходимо указать perfume_id и reviewId' });
+      return;
+    }
+
+    // Ищем парфюм по perfume_id
+    const perfume = (await Perfume.findOne({ perfume_id })) as IPerfume;
+
+    if (!perfume) {
+      res.status(404).json({ message: 'Парфюм не найден' });
+      return;
+    }
+
+    // Ищем индекс отзыва в массиве reviews
+    const reviewIndex = perfume.reviews.findIndex(
+      review => review._id.toString() === reviewId
+    );
+
+    if (reviewIndex === -1) {
+      res.status(404).json({ message: 'Отзыв не найден' });
+      return;
+    }
+
+    // Удаляем отзыв из массива
+    perfume.reviews.splice(reviewIndex, 1);
+
+    // Сохраняем изменения
+    await perfume.save();
+
+    res.status(200).json({ message: 'Отзыв успешно удален', reviews: perfume.reviews });
+  } catch (err) {
+    console.error('Ошибка при удалении отзыва:', err);
+    res.status(500).json({ message: 'Ошибка при удалении отзыва' });
   }
 };
