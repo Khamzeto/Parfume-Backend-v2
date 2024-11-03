@@ -732,6 +732,7 @@ export const getAllReviews = async (req: Request, res: Response): Promise<void> 
           _id: 0,
           perfume_id: '$_id', // Переименовываем `_id` в `perfume_id`
           main_image: 1, // Основное изображение парфюма
+          'reviews._id': 1, // Включаем _id отзыва
           'reviews.body': 1, // Текст отзыва
           'reviews.createdAt': 1, // Дата создания отзыва
           'user._id': 1, // ID пользователя
