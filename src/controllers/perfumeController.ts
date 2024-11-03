@@ -703,35 +703,38 @@ export const getRecentReviews = async (req: Request, res: Response): Promise<voi
 };
 export const getAllReviews = async (req: Request, res: Response): Promise<void> => {
   try {
-    const page = parseInt(req.query.page as string) || 1; // Номер страницы
-    const limit = parseInt(req.query.limit as string) || 20; // Лимит отзывов на странице
+    const page = parseInt(req.query.page as string, 10) || 1; // Номер страницы
+    const limit = parseInt(req.query.limit as string, 10) || 20; // Лимит отзывов на странице
     const skip = (page - 1) * limit;
 
-    // Ищем все отзывы по всем парфюмам, сортируя по дате создания с поддержкой пагинации
+    // Агрегируем все отзывы с информацией о пользователях и пагинацией
     const allReviews = await Perfume.aggregate([
       { $unwind: '$reviews' }, // Разворачиваем массив отзывов
-      { $sort: { 'reviews.createdAt': -1 } }, // Сортировка по дате создания отзыва
-      { $skip: skip }, // Пропуск отзывов для пагинации
-      { $limit: limit }, // Лимит отзывов на странице
       {
         $lookup: {
           from: 'users', // Коллекция пользователей
           localField: 'reviews.userId', // Поле userId из отзыва
           foreignField: '_id', // Поле _id из коллекции пользователей
-          as: 'user', // Название поля, куда будут помещены данные пользователя
+          as: 'user', // Название поля для данных пользователя
         },
       },
       {
-        $unwind: '$user', // Извлекаем единственного пользователя из массива
+        $unwind: {
+          path: '$user',
+          preserveNullAndEmptyArrays: true, // Сохраняем отзывы без пользователя
+        },
       },
+      { $sort: { 'reviews.createdAt': -1 } }, // Сортировка по дате создания отзыва
+      { $skip: skip }, // Пропуск отзывов для пагинации
+      { $limit: limit }, // Лимит отзывов на странице
       {
         $project: {
           _id: 0,
-          perfume_id: 1, // ID парфюма
+          perfume_id: '$_id', // Переименовываем `_id` в `perfume_id`
           main_image: 1, // Основное изображение парфюма
           'reviews.body': 1, // Текст отзыва
           'reviews.createdAt': 1, // Дата создания отзыва
-          'user._id': 1, // ID пользователя (userId)
+          'user._id': 1, // ID пользователя
           'user.username': 1, // Никнейм пользователя
         },
       },
@@ -744,18 +747,14 @@ export const getAllReviews = async (req: Request, res: Response): Promise<void> 
     ]);
 
     const total = totalReviews[0]?.total || 0;
+    const pages = Math.ceil(total / limit);
 
-    // Проверка на случай, если отзывы не найдены
-    if (!allReviews.length) {
-      res.status(404).json({ message: 'Отзывы не найдены' });
-      return;
-    }
-
+    // Возвращаем отзывы и информацию о пагинации
     res.json({
       reviews: allReviews,
       total, // Общее количество отзывов
       page,
-      pages: Math.ceil(total / limit), // Общее количество страниц
+      pages, // Общее количество страниц
     });
   } catch (err) {
     console.error('Ошибка при получении всех отзывов:', err);
