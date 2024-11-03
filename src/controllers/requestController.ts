@@ -24,20 +24,35 @@ export const createRequest = async (req: Request, res: Response): Promise<void> 
 // Получение всех заявок
 export const getAllRequests = async (req: Request, res: Response): Promise<void> => {
   try {
-    // Получаем значения page и limit из запроса, задаем их по умолчанию
+    // Get 'page' and 'limit' from the query parameters, set defaults if not provided
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
     const skip = (page - 1) * limit;
 
-    // Находим заявки с учетом пагинации и сортировки по createdAt (последние раньше)
-    const requests = await RequestModel.find()
+    // Build the query conditions
+    const queryConditions: any = {
+      perfumeId: { $ne: null }, // Exclude requests where perfumeId is null
+    };
+
+    // Exclude requests where 'changes' is an empty object
+    queryConditions['$where'] = function () {
+      return Object.keys(this.changes).length > 0;
+    };
+
+    // Apply status filter if provided
+    if (req.query.status && req.query.status !== 'all') {
+      queryConditions.status = req.query.status;
+    }
+
+    // Find requests with pagination and sorting
+    const requests = await RequestModel.find(queryConditions)
       .populate('perfumeId')
-      .sort({ createdAt: -1 }) // Сортировка по убыванию времени создания
+      .sort({ createdAt: -1 }) // Sort by creation date descending
       .skip(skip)
       .limit(limit);
 
-    // Общее количество заявок для информации о пагинации
-    const totalRequests = await RequestModel.countDocuments();
+    // Get the total number of requests matching the conditions
+    const totalRequests = await RequestModel.countDocuments(queryConditions);
     const totalPages = Math.ceil(totalRequests / limit);
 
     res.json({

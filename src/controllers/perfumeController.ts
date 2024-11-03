@@ -701,3 +701,64 @@ export const getRecentReviews = async (req: Request, res: Response): Promise<voi
     res.status(500).json({ message: 'Ошибка при получении последних отзывов' });
   }
 };
+export const getAllReviews = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const page = parseInt(req.query.page as string) || 1; // Номер страницы
+    const limit = parseInt(req.query.limit as string) || 20; // Лимит отзывов на странице
+    const skip = (page - 1) * limit;
+
+    // Ищем все отзывы по всем парфюмам, сортируя по дате создания с поддержкой пагинации
+    const allReviews = await Perfume.aggregate([
+      { $unwind: '$reviews' }, // Разворачиваем массив отзывов
+      { $sort: { 'reviews.createdAt': -1 } }, // Сортировка по дате создания отзыва
+      { $skip: skip }, // Пропуск отзывов для пагинации
+      { $limit: limit }, // Лимит отзывов на странице
+      {
+        $lookup: {
+          from: 'users', // Коллекция пользователей
+          localField: 'reviews.userId', // Поле userId из отзыва
+          foreignField: '_id', // Поле _id из коллекции пользователей
+          as: 'user', // Название поля, куда будут помещены данные пользователя
+        },
+      },
+      {
+        $unwind: '$user', // Извлекаем единственного пользователя из массива
+      },
+      {
+        $project: {
+          _id: 0,
+          perfume_id: 1, // ID парфюма
+          main_image: 1, // Основное изображение парфюма
+          'reviews.body': 1, // Текст отзыва
+          'reviews.createdAt': 1, // Дата создания отзыва
+          'user._id': 1, // ID пользователя (userId)
+          'user.username': 1, // Никнейм пользователя
+        },
+      },
+    ]);
+
+    // Подсчитываем общее количество отзывов для пагинации
+    const totalReviews = await Perfume.aggregate([
+      { $unwind: '$reviews' },
+      { $count: 'total' },
+    ]);
+
+    const total = totalReviews[0]?.total || 0;
+
+    // Проверка на случай, если отзывы не найдены
+    if (!allReviews.length) {
+      res.status(404).json({ message: 'Отзывы не найдены' });
+      return;
+    }
+
+    res.json({
+      reviews: allReviews,
+      total, // Общее количество отзывов
+      page,
+      pages: Math.ceil(total / limit), // Общее количество страниц
+    });
+  } catch (err) {
+    console.error('Ошибка при получении всех отзывов:', err);
+    res.status(500).json({ message: 'Ошибка при получении всех отзывов' });
+  }
+};

@@ -15,7 +15,8 @@ import {
   getRecentPerfumes,
   addReview,
   addCategoryRatings,
-  getRecentReviews, // Импортируем функцию для добавления отзыва
+  getRecentReviews,
+  getAllReviews, // Импортируем функцию для добавления отзыва
 } from '../controllers/perfumeController';
 
 const router = express.Router();
@@ -48,4 +49,5 @@ router.get('/:perfume_id', getPerfumeById); // Get perfume by ID
 router.put('/:id', updatePerfume); // Update perfume by ID
 router.delete('/:id', deletePerfume); // Delete perfume by ID
 router.get('/reviews/recent', getRecentReviews);
+router.get('/reviews/all', getAllReviews);
 export default router;
