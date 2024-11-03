@@ -60,7 +60,7 @@ export interface IPerfume extends Document {
 // Определение схемы для коллекции "perfumes"
 const reviewSchema = new Schema({
   _id: { type: Schema.Types.ObjectId, default: () => new mongoose.Types.ObjectId() },
-  userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+  userId: { type: Schema.Types.ObjectId, ref: 'User', required: false },
   body: { type: String, required: true },
   createdAt: { type: Date, default: Date.now },
 });

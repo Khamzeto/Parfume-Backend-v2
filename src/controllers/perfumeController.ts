@@ -797,7 +797,8 @@ export const deleteReview = async (req: Request, res: Response): Promise<void> =
 
     perfume.reviews.splice(reviewIndex, 1);
 
-    await perfume.save();
+    // Отключаем валидацию при сохранении
+    await perfume.save({ validateBeforeSave: false });
 
     res.status(200).json({ message: 'Отзыв успешно удален', reviews: perfume.reviews });
   } catch (err) {
