@@ -51,5 +51,5 @@ router.put('/:id', updatePerfume); // Update perfume by ID
 router.delete('/:id', deletePerfume); // Delete perfume by ID
 router.get('/reviews/recent', getRecentReviews);
 router.get('/reviews/all', getAllReviews);
-router.delete('/perfumes/:perfume_id/reviews/:reviewId', deleteReview);
+router.delete('/delete/:perfume_id/reviews/:reviewId', deleteReview);
 export default router;
