@@ -566,3 +566,67 @@ export const getUserPerfumeCollection = async (
     });
   }
 };
+export const getTotalUsers = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const totalUsers = await User.countDocuments();
+    return res.status(200).json({ totalUsers });
+  } catch (error: any) {
+    return res
+      .status(500)
+      .json({
+        message: 'Ошибка сервера при подсчете пользователей',
+        error: error.message,
+      });
+  }
+};
+
+// Контроллер для получения количества пользователей по месяцам
+export const getUsersByMonth = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const usersByMonth = await User.aggregate([
+      {
+        $group: {
+          _id: { $month: '$createdAt' }, // Группируем по месяцу регистрации
+          count: { $sum: 1 }, // Подсчитываем количество пользователей
+        },
+      },
+      {
+        $sort: { _id: 1 }, // Сортируем по месяцу
+      },
+      {
+        $project: {
+          month: {
+            $switch: {
+              // Конвертируем числовой месяц в строку
+              branches: [
+                { case: { $eq: ['$_id', 1] }, then: 'January' },
+                { case: { $eq: ['$_id', 2] }, then: 'February' },
+                { case: { $eq: ['$_id', 3] }, then: 'March' },
+                { case: { $eq: ['$_id', 4] }, then: 'April' },
+                { case: { $eq: ['$_id', 5] }, then: 'May' },
+                { case: { $eq: ['$_id', 6] }, then: 'June' },
+                { case: { $eq: ['$_id', 7] }, then: 'July' },
+                { case: { $eq: ['$_id', 8] }, then: 'August' },
+                { case: { $eq: ['$_id', 9] }, then: 'September' },
+                { case: { $eq: ['$_id', 10] }, then: 'October' },
+                { case: { $eq: ['$_id', 11] }, then: 'November' },
+                { case: { $eq: ['$_id', 12] }, then: 'December' },
+              ],
+              default: 'Unknown',
+            },
+          },
+          count: 1,
+        },
+      },
+    ]);
+
+    return res.status(200).json({ usersByMonth });
+  } catch (error: any) {
+    return res
+      .status(500)
+      .json({
+        message: 'Ошибка сервера при подсчете пользователей по месяцам',
+        error: error.message,
+      });
+  }
+};

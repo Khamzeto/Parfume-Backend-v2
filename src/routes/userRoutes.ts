@@ -12,6 +12,8 @@ import {
   getUserWishlist,
   getUserPerfumeCollection,
   changePassword,
+  getTotalUsers,
+  getUsersByMonth,
 } from '../controllers/authController';
 
 const router = express.Router();
@@ -30,7 +32,10 @@ router.delete('/:id', deleteUser);
 
 // Добавление парфюма в коллекцию
 router.post('/collection/:id', addToCollection);
+router.get('/total-users', getTotalUsers);
 
+// Маршрут для получения количества пользователей по месяцам
+router.get('/users-by-month', getUsersByMonth);
 // Удаление парфюма из коллекции
 router.delete('/collection/:id', removeFromCollection);
 
