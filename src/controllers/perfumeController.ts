@@ -766,21 +766,24 @@ export const deleteReview = async (req: Request, res: Response): Promise<void> =
   try {
     const { perfume_id, reviewId } = req.params;
 
-    // Проверяем, что переданы оба параметра
+    console.log(
+      `Received request to delete review. perfume_id: ${perfume_id}, reviewId: ${reviewId}`
+    );
+
     if (!perfume_id || !reviewId) {
       res.status(400).json({ message: 'Необходимо указать perfume_id и reviewId' });
       return;
     }
 
-    // Ищем парфюм по perfume_id
-    const perfume = (await Perfume.findOne({ perfume_id })) as IPerfume;
+    const perfume = await Perfume.findOne({ perfume_id });
 
     if (!perfume) {
       res.status(404).json({ message: 'Парфюм не найден' });
       return;
     }
 
-    // Ищем индекс отзыва в массиве reviews
+    console.log(`Perfume found: ${perfume.name}`);
+
     const reviewIndex = perfume.reviews.findIndex(
       review => review._id.toString() === reviewId
     );
@@ -790,15 +793,20 @@ export const deleteReview = async (req: Request, res: Response): Promise<void> =
       return;
     }
 
-    // Удаляем отзыв из массива
+    console.log(`Review found at index: ${reviewIndex}`);
+
     perfume.reviews.splice(reviewIndex, 1);
 
-    // Сохраняем изменения
     await perfume.save();
 
     res.status(200).json({ message: 'Отзыв успешно удален', reviews: perfume.reviews });
   } catch (err) {
     console.error('Ошибка при удалении отзыва:', err);
-    res.status(500).json({ message: 'Ошибка при удалении отзыва' });
+
+    if (err instanceof Error) {
+      res.status(500).json({ message: 'Ошибка при удалении отзыва', error: err.message });
+    } else {
+      res.status(500).json({ message: 'Ошибка при удалении отзыва', error: String(err) });
+    }
   }
 };
