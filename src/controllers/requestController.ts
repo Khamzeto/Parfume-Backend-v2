@@ -52,6 +52,7 @@ export const getAllRequests = async (req: Request, res: Response): Promise<void>
 };
 
 // Одобрение заявки
+// Одобрение заявки
 export const approveRequest = async (req: Request, res: Response): Promise<void> => {
   try {
     const request = await RequestModel.findById(req.params.id);
@@ -60,14 +61,35 @@ export const approveRequest = async (req: Request, res: Response): Promise<void>
       return;
     }
 
+    if (!request.perfumeId) {
+      res.status(400).json({ message: 'Заявка не содержит идентификатор парфюма.' });
+      return;
+    }
+
     // Применение изменений к парфюму
-    await Perfume.findByIdAndUpdate(request.perfumeId, request.changes, { new: true });
+    const updatedPerfume = await Perfume.findByIdAndUpdate(
+      request.perfumeId,
+      request.changes,
+      { new: true }
+    );
+
+    if (!updatedPerfume) {
+      res.status(404).json({ message: 'Парфюм не найден.' });
+      return;
+    }
+
     request.status = 'approved';
     await request.save();
 
     res.json({ message: 'Заявка одобрена и изменения применены.' });
-  } catch (err) {
-    res.status(500).json({ message: 'Ошибка при одобрении заявки.' });
+  } catch (err: any) {
+    if (err.name === 'ValidationError') {
+      console.error('Ошибка валидации:', err);
+      res.status(400).json({ message: 'Ошибка валидации данных.', details: err.errors });
+    } else {
+      console.error('Ошибка в approveRequest:', err);
+      res.status(500).json({ message: 'Ошибка при одобрении заявки.' });
+    }
   }
 };
 
@@ -80,11 +102,23 @@ export const rejectRequest = async (req: Request, res: Response): Promise<void> 
       return;
     }
 
+    if (!request.perfumeId) {
+      res.status(400).json({ message: 'Заявка не содержит идентификатор парфюма.' });
+      return;
+    }
+
     request.status = 'rejected';
     await request.save();
+
     res.json({ message: 'Заявка отклонена.' });
-  } catch (err) {
-    res.status(500).json({ message: 'Ошибка при отклонении заявки.' });
+  } catch (err: any) {
+    if (err.name === 'ValidationError') {
+      console.error('Ошибка валидации:', err);
+      res.status(400).json({ message: 'Ошибка валидации данных.', details: err.errors });
+    } else {
+      console.error('Ошибка в rejectRequest:', err);
+      res.status(500).json({ message: 'Ошибка при отклонении заявки.' });
+    }
   }
 };
 
