@@ -17,7 +17,9 @@ import {
   updatePopularityScore,
   removePopularity,
   getPopularArticles,
-  getLatestArticles, // Контроллер для удаления ответа на комментарий
+  getLatestArticles,
+  getAllComments,
+  deleteComment, // Контроллер для удаления ответа на комментарий
 } from '../controllers/articleController'; // Импорт контроллеров
 
 const router = Router();
@@ -73,5 +75,8 @@ router.put('/requests/:id/unpopular', removePopularity);
 
 // Получить все популярные статьи
 router.get('/requests/popular', getPopularArticles);
+router.get('/comments/all', getAllComments);
 
+// Удаление комментария по его ID
+router.delete('/comments/:commentId', deleteComment);
 export default router;

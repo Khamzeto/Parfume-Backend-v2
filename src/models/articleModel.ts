@@ -1,5 +1,6 @@
+// articleModel.ts
+
 import mongoose, { Schema, Document, Types } from 'mongoose';
-import User, { IUser } from '../models/userModel';
 
 export interface IComment {
   _id: Types.ObjectId;
@@ -21,6 +22,7 @@ export interface ICommentReply {
 }
 
 const commentReplySchema = new Schema<ICommentReply>({
+  _id: { type: Schema.Types.ObjectId, default: () => new mongoose.Types.ObjectId() }, // Добавляем _id
   userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   username: { type: String, required: true },
   avatar: { type: String, required: false },
@@ -29,6 +31,7 @@ const commentReplySchema = new Schema<ICommentReply>({
 });
 
 const commentSchema = new Schema<IComment>({
+  _id: { type: Schema.Types.ObjectId, default: () => new mongoose.Types.ObjectId() }, // Добавляем _id
   userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   username: { type: String, required: true },
   avatar: { type: String, required: false },

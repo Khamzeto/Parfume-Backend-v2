@@ -557,3 +557,91 @@ export const getLatestArticles = async (req: Request, res: Response): Promise<vo
     });
   }
 };
+export const getAllComments = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const page = parseInt(req.query.page as string, 10) || 1; // Номер страницы
+    const limit = parseInt(req.query.limit as string, 10) || 20; // Лимит комментариев на странице
+    const skip = (page - 1) * limit;
+
+    // Агрегируем все комментарии с информацией о пользователях и пагинацией
+    const allComments = await ArticleRequest.aggregate([
+      { $unwind: '$comments' }, // Разворачиваем массив комментариев
+      {
+        $lookup: {
+          from: 'users', // Коллекция пользователей
+          localField: 'comments.userId', // Поле userId из комментария
+          foreignField: '_id', // Поле _id из коллекции пользователей
+          as: 'user', // Название поля для данных пользователя
+        },
+      },
+      {
+        $unwind: {
+          path: '$user',
+          preserveNullAndEmptyArrays: true, // Сохраняем комментарии без пользователя
+        },
+      },
+      { $sort: { 'comments.createdAt': -1 } }, // Сортировка по дате создания комментария
+      { $skip: skip }, // Пропуск комментариев для пагинации
+      { $limit: limit }, // Лимит комментариев на странице
+      {
+        $project: {
+          _id: 0,
+          article_id: '$_id', // ID статьи
+          title: 1, // Название статьи
+          'comments._id': 1, // ID комментария
+          'comments.content': 1, // Текст комментария
+          'comments.createdAt': 1, // Дата создания комментария
+          'user._id': 1, // ID пользователя
+          'user.username': 1, // Никнейм пользователя
+          'user.avatar': 1, // Аватар пользователя (если есть)
+        },
+      },
+    ]);
+
+    // Подсчитываем общее количество комментариев для пагинации
+    const totalCommentsResult = await ArticleRequest.aggregate([
+      { $unwind: '$comments' },
+      { $count: 'total' },
+    ]);
+
+    const total = totalCommentsResult[0]?.total || 0;
+    const pages = Math.ceil(total / limit);
+
+    // Возвращаем комментарии и информацию о пагинации
+    res.json({
+      comments: allComments,
+      total, // Общее количество комментариев
+      page,
+      pages, // Общее количество страниц
+    });
+  } catch (err) {
+    console.error('Ошибка при получении всех комментариев:', err);
+    res.status(500).json({ message: 'Ошибка при получении всех комментариев' });
+  }
+};
+
+export const deleteComment = async (req: Request, res: Response): Promise<void> => {
+  const { commentId } = req.params;
+
+  try {
+    // Ищем статью, содержащую комментарий
+    const article = await ArticleRequest.findOne({
+      'comments._id': new mongoose.Types.ObjectId(commentId),
+    });
+
+    if (!article) {
+      res.status(404).json({ message: 'Комментарий не найден.' });
+      return;
+    }
+
+    // Используем `.pull()` для удаления комментария по его ID
+    article.comments.pull(new mongoose.Types.ObjectId(commentId));
+
+    await article.save();
+
+    res.json({ message: 'Комментарий удален.' });
+  } catch (err) {
+    console.error('Ошибка при удалении комментария:', err);
+    res.status(500).json({ message: 'Ошибка при удалении комментария' });
+  }
+};
