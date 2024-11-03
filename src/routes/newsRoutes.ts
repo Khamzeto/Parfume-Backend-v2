@@ -15,6 +15,8 @@ import {
   getPopularNews,
   getNewsById,
   getLatestNews,
+  getAllComments,
+  deleteComment,
 } from '../controllers/newsController'; // Импортируем контроллер новостей
 import { checkRole } from '../middleware/roleMiddleware';
 
@@ -66,5 +68,9 @@ router.put('/requests/:id/popular', updatePopularityScore);
 
 // Убрать популярность с новости
 router.put('/requests/:id/unpopular', removePopularity);
+router.get('/comments/all', getAllComments);
+
+// Удаление комментария по его ID
+router.delete('/comments/:commentId', deleteComment);
 
 export default router;

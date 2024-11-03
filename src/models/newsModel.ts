@@ -20,6 +20,7 @@ export interface ICommentReply {
 }
 
 const commentReplySchema = new Schema<ICommentReply>({
+  _id: { type: Schema.Types.ObjectId, default: () => new mongoose.Types.ObjectId() }, // Добавлено поле _id
   userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   username: { type: String, required: true },
   avatar: { type: String, required: false },
@@ -28,6 +29,7 @@ const commentReplySchema = new Schema<ICommentReply>({
 });
 
 const commentSchema = new Schema<IComment>({
+  _id: { type: Schema.Types.ObjectId, default: () => new mongoose.Types.ObjectId() }, // Добавлено поле _id
   userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   username: { type: String, required: true },
   avatar: { type: String, required: false },
