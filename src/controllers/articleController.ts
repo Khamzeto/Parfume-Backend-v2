@@ -263,7 +263,10 @@ export const getArticleRequestById = async (
   res: Response
 ): Promise<void> => {
   try {
-    const request = await ArticleRequest.findById(req.params.id);
+    const request = await ArticleRequest.findById(req.params.id).populate(
+      'userId',
+      'username avatar'
+    );
 
     if (!request) {
       res.status(404).json({ message: 'Заявка не найдена.' });
