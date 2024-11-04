@@ -14,6 +14,7 @@ import {
   changePassword,
   getTotalUsers,
   getUsersByMonth,
+  toggleUserVerification,
 } from '../controllers/authController';
 
 const router = express.Router();
@@ -59,5 +60,6 @@ router.put('/:userId/change-password', changePassword);
 
 // Получение коллекций пользователя
 router.get('/:userId/collections', getUserCollections);
+router.put('/verified/:userId/toggle-verification', toggleUserVerification);
 
 export default router;

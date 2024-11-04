@@ -15,6 +15,7 @@ export interface IUser extends Document {
   perfumeCollection: string[];
   isActivated: boolean;
   activationCode: string;
+  isVerified: boolean;
   isValidPassword(password: string): Promise<boolean>;
 }
 
@@ -72,6 +73,11 @@ const UserSchema: Schema<IUser> = new Schema({
   },
   activationCode: {
     type: String,
+  },
+  isVerified: {
+    // Поле для статуса true/false
+    type: Boolean,
+    default: false, // По умолчанию значение false
   },
 });
 

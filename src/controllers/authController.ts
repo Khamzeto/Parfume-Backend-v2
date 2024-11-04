@@ -571,12 +571,10 @@ export const getTotalUsers = async (req: Request, res: Response): Promise<Respon
     const totalUsers = await User.countDocuments();
     return res.status(200).json({ totalUsers });
   } catch (error: any) {
-    return res
-      .status(500)
-      .json({
-        message: 'Ошибка сервера при подсчете пользователей',
-        error: error.message,
-      });
+    return res.status(500).json({
+      message: 'Ошибка сервера при подсчете пользователей',
+      error: error.message,
+    });
   }
 };
 
@@ -622,11 +620,37 @@ export const getUsersByMonth = async (req: Request, res: Response): Promise<Resp
 
     return res.status(200).json({ usersByMonth });
   } catch (error: any) {
-    return res
-      .status(500)
-      .json({
-        message: 'Ошибка сервера при подсчете пользователей по месяцам',
-        error: error.message,
-      });
+    return res.status(500).json({
+      message: 'Ошибка сервера при подсчете пользователей по месяцам',
+      error: error.message,
+    });
+  }
+};
+export const toggleUserVerification = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  const { userId } = req.params;
+
+  try {
+    const user: IUser | null = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: 'Пользователь не найден' });
+    }
+
+    // Переключаем значение isVerified
+    user.isVerified = !user.isVerified;
+    await user.save();
+
+    return res.status(200).json({
+      message: `Поле isVerified успешно изменено на ${user.isVerified}`,
+      isVerified: user.isVerified,
+    });
+  } catch (error: any) {
+    return res.status(500).json({
+      message: 'Ошибка сервера при изменении статуса верификации',
+      error: error.message,
+    });
   }
 };
