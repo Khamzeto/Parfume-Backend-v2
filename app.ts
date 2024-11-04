@@ -10,6 +10,7 @@ import userRoutes from './src/routes/userRoutes';
 import galleryRoutes from './src/routes/galleryRoutes';
 import articleRoutes from './src/routes/articleRoutes';
 import newsRoutes from './src/routes/newsRoutes';
+import shopRoutes from './src/routes/shopRoutes';
 import bodyParser from 'body-parser';
 import cors from 'cors';
 import passportConfig from './src/config/passport'; // Конфигурация passport
@@ -64,6 +65,7 @@ app.use(express.json());
 app.use('/perfumes', perfumeRoutes);
 app.use('/parfumers', parfumerRoutes);
 app.use('/notes', noteRoutes);
+app.use('/shops', shopRoutes);
 // Использование маршрутов для брендов
 app.use('/brands', brandRoutes);
 app.use('/requests', requestRoutes);
