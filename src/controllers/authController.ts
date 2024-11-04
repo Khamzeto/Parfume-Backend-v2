@@ -159,6 +159,8 @@ export const login = async (req: Request, res: Response): Promise<Response> => {
       user: {
         id: user._id,
         username: user.username,
+        avatar: user.avatar,
+        isVerified: user.isVerified,
         email: user.email,
         wishlist: user.wishlist,
         perfumeCollection: user.perfumeCollection,
