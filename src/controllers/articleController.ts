@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import mongoose from 'mongoose';
 import ArticleRequest, { IComment } from '../models/articleModel'; // Модель и интерфейсы
+import userModel from '../models/userModel';
 
 // Создание заявки на добавление статьи
 export const createArticleRequest = async (
@@ -263,17 +264,24 @@ export const getArticleRequestById = async (
   res: Response
 ): Promise<void> => {
   try {
-    const request = await ArticleRequest.findById(req.params.id).populate({
-      path: 'userId', // Основной автор статьи
-      select: 'username avatar', // Подтягиваем только username и avatar
-    });
+    // Находим статью по ID
+    const request = await ArticleRequest.findById(req.params.id);
 
     if (!request) {
       res.status(404).json({ message: 'Заявка не найдена.' });
       return;
     }
 
-    res.json(request);
+    // Получаем `userId` из статьи и находим данные пользователя отдельно
+    const user = await userModel.findById(request.userId).select('username avatar');
+
+    // Добавляем данные пользователя к ответу, если пользователь найден
+    const response = {
+      ...request.toObject(), // Преобразуем статью в обычный объект
+      user: user || null, // Добавляем данные пользователя или `null`, если не найден
+    };
+
+    res.json(response);
   } catch (err) {
     res.status(500).json({
       message: 'Ошибка при получении заявки на статью.',
