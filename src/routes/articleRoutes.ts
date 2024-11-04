@@ -19,7 +19,8 @@ import {
   getPopularArticles,
   getLatestArticles,
   getAllComments,
-  deleteComment, // Контроллер для удаления ответа на комментарий
+  deleteComment,
+  deleteArticle, // Контроллер для удаления ответа на комментарий
 } from '../controllers/articleController'; // Импорт контроллеров
 
 const router = Router();
@@ -79,4 +80,5 @@ router.get('/comments/all', getAllComments);
 
 // Удаление комментария по его ID
 router.delete('/comments/:commentId', deleteComment);
+router.delete('/delete/:id', deleteArticle);
 export default router;

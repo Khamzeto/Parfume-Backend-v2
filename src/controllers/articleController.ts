@@ -645,3 +645,23 @@ export const deleteComment = async (req: Request, res: Response): Promise<void> 
     res.status(500).json({ message: 'Ошибка при удалении комментария' });
   }
 };
+// Удаление статьи
+export const deleteArticle = async (req: Request, res: Response): Promise<void> => {
+  const { id } = req.params;
+
+  try {
+    const article = await ArticleRequest.findByIdAndDelete(id);
+    if (!article) {
+      res.status(404).json({ message: 'Статья не найдена.' });
+      return;
+    }
+
+    res.json({ message: 'Статья успешно удалена.' });
+  } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : 'Неизвестная ошибка';
+    res.status(500).json({
+      message: 'Ошибка при удалении статьи.',
+      error: errorMessage,
+    });
+  }
+};
