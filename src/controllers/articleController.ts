@@ -264,8 +264,8 @@ export const getArticleRequestById = async (
 ): Promise<void> => {
   try {
     const request = await ArticleRequest.findById(req.params.id).populate({
-      path: 'userId', // Основной автор статьи
-      select: 'username avatar coverImage', // Подтягиваем только нужные поля
+      path: 'userId',
+      select: 'username avatar', // Подтягиваем только username и avatar
     });
 
     if (!request) {
@@ -277,7 +277,7 @@ export const getArticleRequestById = async (
   } catch (err) {
     res.status(500).json({
       message: 'Ошибка при получении заявки на статью.',
-      error: (err as Error).message,
+      error: err instanceof Error ? err.message : 'Неизвестная ошибка',
     });
   }
 };
