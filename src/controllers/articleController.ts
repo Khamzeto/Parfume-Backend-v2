@@ -264,7 +264,7 @@ export const getArticleRequestById = async (
 ): Promise<void> => {
   try {
     const request = await ArticleRequest.findById(req.params.id).populate({
-      path: 'userId',
+      path: 'userId', // Основной автор статьи
       select: 'username avatar', // Подтягиваем только username и avatar
     });
 

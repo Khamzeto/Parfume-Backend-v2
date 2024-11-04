@@ -22,7 +22,7 @@ export interface ICommentReply {
 }
 
 const commentReplySchema = new Schema<ICommentReply>({
-  _id: { type: Schema.Types.ObjectId, default: () => new mongoose.Types.ObjectId() }, // Добавляем _id
+  _id: { type: Schema.Types.ObjectId, default: () => new mongoose.Types.ObjectId() },
   userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   username: { type: String, required: true },
   avatar: { type: String, required: false },
@@ -31,13 +31,13 @@ const commentReplySchema = new Schema<ICommentReply>({
 });
 
 const commentSchema = new Schema<IComment>({
-  _id: { type: Schema.Types.ObjectId, default: () => new mongoose.Types.ObjectId() }, // Добавляем _id
+  _id: { type: Schema.Types.ObjectId, default: () => new mongoose.Types.ObjectId() },
   userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   username: { type: String, required: true },
   avatar: { type: String, required: false },
   content: { type: String, required: true },
   createdAt: { type: Date, default: Date.now },
-  replies: [commentReplySchema], // Поддержка ответов на комментарии
+  replies: [commentReplySchema],
 });
 
 const articleSchema = new Schema({
@@ -45,12 +45,12 @@ const articleSchema = new Schema({
   description: { type: String, required: true },
   content: { type: String, required: true },
   coverImage: { type: String, required: false },
-  userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+  userId: { type: Schema.Types.ObjectId, ref: 'User', required: true }, // Убедитесь, что `ref` настроен правильно
   status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
-  comments: [commentSchema], // Комментарии
-  isPopular: { type: Boolean, default: false }, // Поле для статуса популярности
-  popularityScore: { type: Number, default: 0 }, // Поле для балла популярности
-  createdAt: { type: Date, default: Date.now }, // Время создания статьи
+  comments: [commentSchema],
+  isPopular: { type: Boolean, default: false },
+  popularityScore: { type: Number, default: 0 },
+  createdAt: { type: Date, default: Date.now },
 });
 
 export default mongoose.model('ArticleRequest', articleSchema);
