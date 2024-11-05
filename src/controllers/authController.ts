@@ -265,7 +265,19 @@ export const getUserById = async (req: Request, res: Response): Promise<Response
 
 // Обновление данных пользователя
 export const updateUser = async (req: Request, res: Response): Promise<Response> => {
-  const { username, email, avatar, roles, description } = req.body; // Добавлено поле description
+  const {
+    username,
+    email,
+    avatar,
+    roles,
+    description,
+    website,
+    vkUrl,
+    instagramUrl,
+    youtubeUrl,
+    pinterestUrl,
+    telegramUrl,
+  } = req.body; // Add additional fields here
   const userId = req.params.id;
 
   try {
@@ -278,10 +290,20 @@ export const updateUser = async (req: Request, res: Response): Promise<Response>
     user.username = username || user.username;
     user.email = email || user.email;
     user.avatar = avatar || user.avatar;
-    user.description = description || user.description; // Обновление описания
+    user.description = description || user.description;
+
+    // Update roles if provided and valid
     if (roles) {
       user.roles = Array.isArray(roles) ? roles : [roles];
     }
+
+    // Update additional fields for social media and website links if provided
+    user.website = website || user.website;
+    user.vkUrl = vkUrl || user.vkUrl;
+    user.instagramUrl = instagramUrl || user.instagramUrl;
+    user.youtubeUrl = youtubeUrl || user.youtubeUrl;
+    user.pinterestUrl = pinterestUrl || user.pinterestUrl;
+    user.telegramUrl = telegramUrl || user.telegramUrl;
 
     await user.save();
 
@@ -292,14 +314,21 @@ export const updateUser = async (req: Request, res: Response): Promise<Response>
         username: user.username,
         email: user.email,
         avatar: user.avatar,
-        description: user.description, // Добавлено описание в ответ
+        description: user.description,
         roles: user.roles,
+        website: user.website,
+        vkUrl: user.vkUrl,
+        instagramUrl: user.instagramUrl,
+        youtubeUrl: user.youtubeUrl,
+        pinterestUrl: user.pinterestUrl,
+        telegramUrl: user.telegramUrl,
       },
     });
   } catch (err: any) {
     return res.status(500).json({ msg: 'Ошибка сервера', error: err.message });
   }
 };
+
 export const changePassword = async (req: Request, res: Response): Promise<Response> => {
   const { userId } = req.params; // ID пользователя
   const { oldPassword, newPassword } = req.body; // Старый и новый пароли

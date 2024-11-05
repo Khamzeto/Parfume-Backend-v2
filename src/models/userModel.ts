@@ -16,6 +16,12 @@ export interface IUser extends Document {
   isActivated: boolean;
   activationCode: string;
   isVerified: boolean;
+  website?: string; // Additional field for a website URL
+  vkUrl?: string;
+  instagramUrl?: string;
+  youtubeUrl?: string;
+  pinterestUrl?: string;
+  telegramUrl?: string;
   isValidPassword(password: string): Promise<boolean>;
 }
 
@@ -53,7 +59,7 @@ const UserSchema: Schema<IUser> = new Schema({
   },
   description: {
     type: String,
-    default: '', // По умолчанию пустое описание
+    default: '', // Default empty description
   },
   createdAt: {
     type: Date,
@@ -75,10 +81,39 @@ const UserSchema: Schema<IUser> = new Schema({
     type: String,
   },
   isVerified: {
-    // Поле для статуса true/false
     type: Boolean,
-    default: false, // По умолчанию значение false
+    default: false,
+  },
+  // Social media and website fields
+  website: {
+    type: String,
+    default: null,
+  },
+  vkUrl: {
+    type: String,
+    default: null,
+  },
+  instagramUrl: {
+    type: String,
+    default: null,
+  },
+  youtubeUrl: {
+    type: String,
+    default: null,
+  },
+  pinterestUrl: {
+    type: String,
+    default: null,
+  },
+  telegramUrl: {
+    type: String,
+    default: null,
   },
 });
+
+// Adding password verification logic
+UserSchema.methods.isValidPassword = async function (password: string): Promise<boolean> {
+  return await argon2.verify(this.password, password);
+};
 
 export default mongoose.model<IUser>('User', UserSchema);
