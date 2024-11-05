@@ -297,7 +297,6 @@ export const deleteParfumerById = async (req: Request, res: Response): Promise<v
     res.status(500).json({ message: (err as Error).message });
   }
 };
-
 export const searchParfumers = async (req: Request, res: Response): Promise<void> => {
   try {
     let { query = '', page = 1, limit = 10 } = req.query;
@@ -313,15 +312,23 @@ export const searchParfumers = async (req: Request, res: Response): Promise<void
     const normalizedQuery = query.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     const transliteratedQuery = tr(normalizedQuery.toLowerCase());
 
-    // Фильтры для поиска
-    const filters: any = {};
-
-    if (query) {
-      filters.$or = [
-        { original: { $regex: normalizedQuery, $options: 'i' } },
-        { original_ru: { $regex: transliteratedQuery, $options: 'i' } },
-      ];
-    }
+    // Фильтры для поиска с $and to include both $or conditions without conflict
+    const filters: any = {
+      $and: [
+        {
+          $or: [
+            { original: { $regex: normalizedQuery, $options: 'i' } },
+            { original: { $regex: transliteratedQuery, $options: 'i' } },
+          ],
+        },
+        {
+          $or: [
+            { original_ru: { $regex: normalizedQuery, $options: 'i' } },
+            { original_ru: { $regex: transliteratedQuery, $options: 'i' } },
+          ],
+        },
+      ],
+    };
 
     const parfumersFromDb = await parfumerModel
       .find(filters)
