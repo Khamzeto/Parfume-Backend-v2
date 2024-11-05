@@ -90,10 +90,12 @@ export const searchPerfumes = async (req: Request, res: Response): Promise<void>
     const isBrandSearch = Boolean(queryBrand);
     const searchQuery = isBrandSearch ? queryBrand : query;
 
-    // Нормализуем строку поиска, если она является строкой
+    // Нормализуем и транслитерируем строку поиска, если она является строкой
     let normalizedQuery = '';
+    let transliteratedQuery = '';
     if (typeof searchQuery === 'string') {
       normalizedQuery = searchQuery.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      transliteratedQuery = tr(normalizedQuery.toLowerCase()); // Транслитерация
     }
 
     // Параметры пагинации и сортировки
@@ -115,19 +117,37 @@ export const searchPerfumes = async (req: Request, res: Response): Promise<void>
     const filters: any = {};
     const andConditions: any[] = [];
 
-    // Применяем фильтрацию по названию и бренду только если значения заданы и являются строками
+    // Применяем фильтрацию по названию и бренду с учетом транслитерации
     if (typeof queryBrand === 'string' && typeof query === 'string') {
       andConditions.push({
-        brand: { $regex: new RegExp(`^${queryBrand}$`, 'i') },
-        name: { $regex: new RegExp(query, 'i') },
+        $and: [
+          {
+            $or: [
+              { brand: { $regex: new RegExp(`^${queryBrand}$`, 'i') } },
+              { brand: { $regex: new RegExp(`^${tr(queryBrand)}$`, 'i') } },
+            ],
+          },
+          {
+            $or: [
+              { name: { $regex: new RegExp(query, 'i') } },
+              { name: { $regex: new RegExp(transliteratedQuery, 'i') } },
+            ],
+          },
+        ],
       });
     } else if (typeof queryBrand === 'string') {
       andConditions.push({
-        brand: { $regex: new RegExp(`^${queryBrand}$`, 'i') },
+        $or: [
+          { brand: { $regex: new RegExp(`^${queryBrand}$`, 'i') } },
+          { brand: { $regex: new RegExp(`^${tr(queryBrand)}$`, 'i') } },
+        ],
       });
     } else if (typeof query === 'string') {
       andConditions.push({
-        name: { $regex: new RegExp(query, 'i') },
+        $or: [
+          { name: { $regex: new RegExp(query, 'i') } },
+          { name: { $regex: new RegExp(transliteratedQuery, 'i') } },
+        ],
       });
     }
 
@@ -196,7 +216,7 @@ export const searchBrands = async (req: Request, res: Response): Promise<void> =
 
     // Нормализация и транслитерация запроса
     const normalizedQuery = query.normalize('NFD').replace(/[\u0300-\u036f]/g, ''); // Нормализация
-    const transliteratedQuery = tr(query.toLowerCase());
+    const transliteratedQuery = tr(normalizedQuery.toLowerCase()); // Транслитерация
 
     // Параметры пагинации
     const pageNumber = Number(page);
