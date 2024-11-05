@@ -277,7 +277,7 @@ export const updateUser = async (req: Request, res: Response): Promise<Response>
     youtubeUrl,
     pinterestUrl,
     telegramUrl,
-  } = req.body; // Add additional fields here
+  } = req.body;
   const userId = req.params.id;
 
   try {
@@ -286,24 +286,22 @@ export const updateUser = async (req: Request, res: Response): Promise<Response>
       return res.status(404).json({ msg: 'Пользователь не найден' });
     }
 
-    // Update fields if provided
-    user.username = username || user.username;
-    user.email = email || user.email;
-    user.avatar = avatar || user.avatar;
-    user.description = description || user.description;
+    // Обновление полей, учитывая пустые строки как удаление
+    user.username = username ?? user.username;
+    user.email = email ?? user.email;
+    user.avatar = avatar ?? user.avatar;
+    user.description = description ?? user.description;
 
-    // Update roles if provided and valid
     if (roles) {
       user.roles = Array.isArray(roles) ? roles : [roles];
     }
 
-    // Update additional fields for social media and website links if provided
-    user.website = website || user.website;
-    user.vkUrl = vkUrl || user.vkUrl;
-    user.instagramUrl = instagramUrl || user.instagramUrl;
-    user.youtubeUrl = youtubeUrl || user.youtubeUrl;
-    user.pinterestUrl = pinterestUrl || user.pinterestUrl;
-    user.telegramUrl = telegramUrl || user.telegramUrl;
+    user.website = website === '' ? null : website || user.website;
+    user.vkUrl = vkUrl === '' ? null : vkUrl || user.vkUrl;
+    user.instagramUrl = instagramUrl === '' ? null : instagramUrl || user.instagramUrl;
+    user.youtubeUrl = youtubeUrl === '' ? null : youtubeUrl || user.youtubeUrl;
+    user.pinterestUrl = pinterestUrl === '' ? null : pinterestUrl || user.pinterestUrl;
+    user.telegramUrl = telegramUrl === '' ? null : telegramUrl || user.telegramUrl;
 
     await user.save();
 
