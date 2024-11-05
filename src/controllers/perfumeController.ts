@@ -196,7 +196,7 @@ export const searchBrands = async (req: Request, res: Response): Promise<void> =
 
     // Нормализация и транслитерация запроса
     const normalizedQuery = query.normalize('NFD').replace(/[\u0300-\u036f]/g, ''); // Нормализация
-    const transliteratedQuery = tr(normalizedQuery.toLowerCase()); // Транслитерация
+    const transliteratedQuery = tr(query.toLowerCase());
 
     // Параметры пагинации
     const pageNumber = Number(page);
