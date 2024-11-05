@@ -164,6 +164,12 @@ export const login = async (req: Request, res: Response): Promise<Response> => {
         email: user.email,
         wishlist: user.wishlist,
         perfumeCollection: user.perfumeCollection,
+        website: user.website,
+        vkUrl: user.vkUrl,
+        instagramUrl: user.instagramUrl,
+        youtubeUrl: user.youtubeUrl,
+        pinterestUrl: user.pinterestUrl,
+        telegramUrl: user.telegramUrl,
       },
     });
   } catch (err: any) {
