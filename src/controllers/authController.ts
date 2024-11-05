@@ -162,6 +162,7 @@ export const login = async (req: Request, res: Response): Promise<Response> => {
         avatar: user.avatar,
         isVerified: user.isVerified,
         email: user.email,
+        description: user.description,
         wishlist: user.wishlist,
         perfumeCollection: user.perfumeCollection,
         website: user.website,
