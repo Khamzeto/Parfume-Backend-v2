@@ -273,7 +273,9 @@ export const getArticleRequestById = async (
     }
 
     // Получаем `userId` из статьи и находим данные пользователя отдельно
-    const user = await userModel.findById(request.userId).select('username avatar');
+    const user = await userModel
+      .findById(request.userId)
+      .select('username avatar isVerified');
 
     // Добавляем данные пользователя к ответу, если пользователь найден
     const response = {
