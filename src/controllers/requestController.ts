@@ -173,3 +173,15 @@ export const getApprovedRequestsByUserId = async (
       .json({ message: 'Ошибка при получении одобренных заявок пользователя.' });
   }
 };
+// Удаление всех заявок
+export const deleteAllRequests = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const deletedCount = await RequestModel.deleteMany({});
+    res.json({
+      message: `Все заявки удалены (${deletedCount.deletedCount}).`,
+    });
+  } catch (err) {
+    console.error('Ошибка при удалении всех заявок:', err);
+    res.status(500).json({ message: 'Ошибка при удалении всех заявок.' });
+  }
+};

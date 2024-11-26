@@ -8,13 +8,17 @@ import perfumeModel from '../models/perfumeModel';
 
 // Настройка Nodemailer
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: 'connect.smtp.bz', // Ваш SMTP-хост
+  port: 2525, // Ваш порт
+  secure: false, // Для порта 2525 используется false (не SSL)
   auth: {
-    user: 'iimya266@gmail.com',
-    pass: 'ksnz zdqp uuyv dxmw',
+    user: 'noreply@parfumetrika.ru', // Ваш логин
+    pass: '}@LWXgVFGI3C', // Ваш пароль
+  },
+  tls: {
+    rejectUnauthorized: false, // Отключает проверку сертификата, если она не требуется
   },
 });
-
 // Секрет для JWT
 const jwtSecret = process.env.JWT_SECRET || 'your-secret-key';
 
