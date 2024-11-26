@@ -81,4 +81,7 @@ router.get('/comments/all', getAllComments);
 // Удаление комментария по его ID
 router.delete('/comments/:commentId', deleteComment);
 router.delete('/delete/:id', deleteArticle);
+// Обновление заявки на статью
+router.put('/update/:id', updateArticleRequest);
+
 export default router;

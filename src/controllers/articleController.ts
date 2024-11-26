@@ -184,38 +184,6 @@ export const getArticleRequestsByUserId = async (
 };
 
 // Обновление заявки на статью
-export const updateArticleRequest = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  const { title, description, content, coverImage } = req.body;
-
-  try {
-    const request = await ArticleRequest.findById(req.params.id);
-
-    if (!request) {
-      res.status(404).json({ message: 'Заявка не найдена.' });
-      return;
-    }
-
-    // Обновляем поля заявки и изменяем статус на 'pending' при обновлении
-    request.title = title || request.title;
-    request.description = description || request.description;
-    request.content = content || request.content;
-    request.coverImage = coverImage || request.coverImage;
-    request.status = 'pending'; // Снова устанавливаем статус на 'pending'
-
-    await request.save();
-
-    res.json({ message: 'Заявка обновлена.' });
-  } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : 'Неизвестная ошибка';
-    res.status(500).json({
-      message: 'Ошибка при обновлении заявки на статью.',
-      error: errorMessage,
-    });
-  }
-};
 
 // Получение всех одобренных заявок на статьи по userId
 export const getApprovedArticleRequestsByUserId = async (
@@ -674,6 +642,39 @@ export const deleteArticle = async (req: Request, res: Response): Promise<void> 
     const errorMessage = err instanceof Error ? err.message : 'Неизвестная ошибка';
     res.status(500).json({
       message: 'Ошибка при удалении статьи.',
+      error: errorMessage,
+    });
+  }
+};
+// Обновление заявки на статью
+export const updateArticleRequest = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const { title, description, content, coverImage } = req.body;
+
+  try {
+    const request = await ArticleRequest.findById(req.params.id);
+
+    if (!request) {
+      res.status(404).json({ message: 'Заявка не найдена.' });
+      return;
+    }
+
+    // Обновляем поля заявки
+    request.title = title || request.title;
+    request.description = description || request.description;
+    request.content = content || request.content;
+    request.coverImage = coverImage || request.coverImage;
+    request.status = 'pending'; // Снова устанавливаем статус на 'pending'
+
+    await request.save();
+
+    res.json({ message: 'Заявка обновлена.', request });
+  } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : 'Неизвестная ошибка';
+    res.status(500).json({
+      message: 'Ошибка при обновлении заявки на статью.',
       error: errorMessage,
     });
   }
