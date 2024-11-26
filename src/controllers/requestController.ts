@@ -185,3 +185,27 @@ export const deleteAllRequests = async (req: Request, res: Response): Promise<vo
     res.status(500).json({ message: 'Ошибка при удалении всех заявок.' });
   }
 };
+// Обновление заявки
+export const updateRequest = async (req: Request, res: Response): Promise<void> => {
+  const { id } = req.params;
+  const { changes } = req.body; // Новые изменения, которые нужно сохранить
+
+  try {
+    const request = await RequestModel.findById(id);
+    if (!request) {
+      res.status(404).json({ message: 'Заявка не найдена.' });
+      return;
+    }
+
+    // Обновляем поля заявки
+    request.changes = { ...request.changes, ...changes };
+    request.updatedAt = new Date();
+
+    await request.save();
+
+    res.json({ message: 'Заявка успешно обновлена.', request });
+  } catch (err) {
+    console.error('Ошибка при обновлении заявки:', err);
+    res.status(500).json({ message: 'Ошибка при обновлении заявки.' });
+  }
+};

@@ -7,6 +7,7 @@ import {
   deleteRequest,
   getApprovedRequestsByUserId,
   deleteAllRequests,
+  updateRequest,
 } from '../controllers/requestController'; // Подключаем контроллер заявок
 
 const router = express.Router();
@@ -28,5 +29,5 @@ router.get('/user/:userId', getApprovedRequestsByUserId);
 router.delete('/:id', deleteRequest);
 // DELETE /requests — удаление всех заявок
 router.delete('/', deleteAllRequests);
-
+router.put('/:id', updateRequest);
 export default router;
