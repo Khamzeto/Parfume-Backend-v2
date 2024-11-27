@@ -315,6 +315,18 @@ export const getPerfumeById = async (req: Request, res: Response): Promise<void>
       return;
     }
 
+    // Проверяем наличие similar_perfumes и что это массив
+    if (
+      !Array.isArray(perfume.similar_perfumes) ||
+      perfume.similar_perfumes.length === 0
+    ) {
+      res.json({
+        ...perfume.toObject(),
+        similar_perfumes: [], // Возвращаем пустой массив, если similar_perfumes отсутствует
+      });
+      return;
+    }
+
     // Получаем данные для каждого similar_perfumes
     const similarPerfumesWithImages = await Promise.all(
       perfume.similar_perfumes.map(async id => {
