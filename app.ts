@@ -8,6 +8,7 @@ import requestRoutes from './src/routes/requestRoutes';
 import authRoutes from './src/routes/authRoutes';
 import userRoutes from './src/routes/userRoutes';
 import galleryRoutes from './src/routes/galleryRoutes';
+import mainImageRoutes from './src/routes/mainImageRoutes';
 import articleRoutes from './src/routes/articleRoutes';
 import newsRoutes from './src/routes/newsRoutes';
 import shopRoutes from './src/routes/shopRoutes';
@@ -74,6 +75,7 @@ app.use('/users', userRoutes);
 app.use('/gallery', galleryRoutes);
 app.use('/article', articleRoutes);
 app.use('/news', newsRoutes);
+app.use('/main-image', mainImageRoutes);
 // Запуск сервера
 app.listen(PORT, () => {
   console.log(`Сервер запущен на http://localhost:${PORT}`);
