@@ -566,7 +566,7 @@ export const getUserWishlist = async (req: Request, res: Response): Promise<Resp
       .find({
         perfume_id: { $in: user.wishlist },
       })
-      .select('name brand description releaseYear perfume_id');
+      .select('name brand description releaseYear perfume_id main_image');
 
     return res.status(200).json({
       wishlist: wishlistPerfumes,
@@ -594,7 +594,7 @@ export const getUserPerfumeCollection = async (
     // Используем perfume_id для поиска
     const collectionPerfumes = await perfumeModel
       .find({ perfume_id: { $in: user.perfumeCollection } })
-      .select('name brand description perfume_id releaseYear');
+      .select('name brand description perfume_id main_image releaseYear');
 
     return res.status(200).json({
       perfumeCollection: collectionPerfumes,
