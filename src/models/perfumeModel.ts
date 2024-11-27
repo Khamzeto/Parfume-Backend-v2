@@ -42,6 +42,7 @@ export interface IPerfume extends Document {
   release_year: number;
   gender: string;
   main_image: string;
+  image_main: string; // Добавлено новое поле
   additional_images: string[];
   gallery_images: string[];
   perfumers: string[];
@@ -84,6 +85,7 @@ const perfumeSchema: Schema = new Schema({
   release_year: Number,
   gender: String,
   main_image: String,
+  image_main: String, // Добавлено новое поле
   additional_images: [String],
   gallery_images: [String],
   perfumers: [String],
