@@ -302,10 +302,11 @@ export const searchBrands = async (req: Request, res: Response): Promise<void> =
 
 export const getPerfumeById = async (req: Request, res: Response): Promise<void> => {
   try {
+    // Находим основной парфюм
     const perfume = await Perfume.findOne({ perfume_id: req.params.perfume_id }).populate(
       {
-        path: 'reviews.userId', // указываем путь к userId в reviews
-        select: 'username isVerified', // выбираем только нужные поля
+        path: 'reviews.userId',
+        select: 'username isVerified', // Выбираем только нужные поля
       }
     );
 
@@ -314,7 +315,34 @@ export const getPerfumeById = async (req: Request, res: Response): Promise<void>
       return;
     }
 
-    res.json(perfume);
+    // Получаем данные для каждого similar_perfumes
+    const similarPerfumesWithImages = await Promise.all(
+      perfume.similar_perfumes.map(async id => {
+        const similarPerfume = await Perfume.findOne({ perfume_id: id }).select(
+          'perfume_id main_image image_main'
+        );
+        return similarPerfume
+          ? {
+              perfume_id: similarPerfume.perfume_id,
+              main_image: similarPerfume.main_image,
+              image_main: similarPerfume.image_main,
+            }
+          : null;
+      })
+    );
+
+    // Убираем null, если некоторые ID не найдены
+    const filteredSimilarPerfumes = similarPerfumesWithImages.filter(
+      item => item !== null
+    );
+
+    // Формируем окончательный объект
+    const result = {
+      ...perfume.toObject(),
+      similar_perfumes: filteredSimilarPerfumes, // Заменяем similar_perfumes на данные с изображениями
+    };
+
+    res.json(result);
   } catch (err) {
     console.error('Ошибка при получении парфюма:', err);
     res.status(500).json({ message: (err as Error).message });
