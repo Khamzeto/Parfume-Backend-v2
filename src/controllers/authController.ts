@@ -60,7 +60,7 @@ export const register = async (req: Request, res: Response): Promise<Response> =
 
     // Отправка кода активации на email
     const mailOptions = {
-      from: 'your-email@gmail.com',
+      from: 'noreply@parfumetrika.ru', // Указан корректный адрес
       to: newUser.email,
       subject: 'Код активации аккаунта',
       text: `Ваш код активации: ${activationCode}`,
