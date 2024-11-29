@@ -25,7 +25,10 @@ export interface IPerfume extends Document {
   brandTranslit?: string;
   brand: string;
   perfume_id: string;
-  similar_perfumes: string[];
+  similar_perfumes: {
+    perfume_id: string;
+    main_image: string;
+  }[];
   tags: string[];
   description: string;
   description_links: { text: string; href: string }[];
@@ -70,7 +73,12 @@ const perfumeSchema: Schema = new Schema({
   name: { type: String, required: true },
   brand: { type: String, required: true },
   perfume_id: { type: String, required: true },
-  similar_perfumes: [String],
+  similar_perfumes: [
+    {
+      perfume_id: { type: String, required: true },
+      main_image: { type: String, required: true },
+    },
+  ],
   tags: [String],
   description: String,
   description_links: [{ text: String, href: String }],
