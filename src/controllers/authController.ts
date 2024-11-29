@@ -13,7 +13,7 @@ const transporter = nodemailer.createTransport({
   secure: false, // Для порта 2525 используется false (не SSL)
   auth: {
     user: 'noreply@parfumetrika.ru', // Ваш логин
-    pass: '}@LWXgVFGI3C', // Ваш пароль
+    pass: '}@LWXgVF.h:GI3C', // Ваш пароль
   },
   tls: {
     rejectUnauthorized: false, // Отключает проверку сертификата, если она не требуется
