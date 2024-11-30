@@ -43,11 +43,6 @@ export const createMainImageRequest = async (
     return;
   }
 
-  if (!image) {
-    res.status(400).json({ message: 'Необходимо загрузить изображение.' });
-    return;
-  }
-
   console.log('Поступил запрос на создание заявки на изменение главного изображения: ', {
     perfumeId,
     userId,
@@ -55,17 +50,11 @@ export const createMainImageRequest = async (
   });
 
   try {
-    // Генерация уникального имени файла
-    const filename = Date.now() + '.jpg'; // Можно использовать расширение .png или другое в зависимости от формата изображения
-
-    // Сохраняем изображение в файловую систему
-    const savedImagePath = saveImageToFileSystem(image, filename);
-
-    // Создаем заявку на изменение изображения
+    // Создаем заявку, сохраняем изображение в base64
     const newMainImageRequest = new MainImageRequest({
       perfumeId,
       userId,
-      image: savedImagePath, // Сохраняем путь к изображению
+      image,
       status: 'pending',
     });
 
@@ -100,21 +89,34 @@ export const approveMainImageRequest = async (
       return;
     }
 
-    // Обновляем главное изображение парфюма
+    // Декодируем изображение из base64
+    const imageBuffer = Buffer.from(request.image, 'base64');
+    const filename = `${Date.now()}.jpg`; // Генерация уникального имени для файла
+
+    const imagePath = path.join(
+      '/var/www/www-root/data/www/parfumetrika.ru/images',
+      filename
+    );
+
+    // Сохраняем изображение на сервере
+    fs.writeFileSync(imagePath, imageBuffer);
+
+    // Обновляем главный путь изображения в базе данных
     const perfume = await Perfume.findById(request.perfumeId);
     if (!perfume) {
       res.status(404).json({ message: 'Парфюм не найден.' });
       return;
     }
 
-    perfume.main_image = request.image; // Путь к изображению в директории
+    // Обновляем путь к изображению в базе данных
+    perfume.image_main = `images/${filename}`;
     await perfume.save();
 
     // Обновляем статус заявки
     request.status = 'approved';
     await request.save();
 
-    res.json({ message: 'Заявка одобрена и главное изображение обновлено.' });
+    res.json({ message: 'Заявка одобрена, изображение загружено.' });
   } catch (err) {
     res.status(500).json({
       message: 'Ошибка при одобрении заявки на изменение главного изображения.',
