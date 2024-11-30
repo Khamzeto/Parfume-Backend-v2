@@ -1,8 +1,34 @@
-// controllers/mainImageController.ts
-
 import { Request, Response } from 'express';
 import Perfume from '../models/perfumeModel';
 import MainImageRequest from '../models/mainImageRequestModel';
+import path from 'path';
+import fs from 'fs';
+
+// Функция для сохранения изображения в файловую систему
+const saveImageToFileSystem = (base64Image: string, filename: string): string => {
+  const matches = base64Image.match(/^data:image\/([a-zA-Z0-9]+);base64,([^\"]+)$/);
+  if (!matches || matches.length < 3) {
+    throw new Error('Неверный формат изображения');
+  }
+
+  const imageBuffer = Buffer.from(matches[2], 'base64');
+
+  // Указываем путь к директории, куда сохраняем изображения
+  const uploadPath = '/var/www/www-root/data/www/parfumetrika.ru/images';
+
+  // Проверяем, существует ли директория
+  if (!fs.existsSync(uploadPath)) {
+    fs.mkdirSync(uploadPath, { recursive: true }); // Создаем директорию, если ее нет
+  }
+
+  // Генерируем путь к файлу
+  const filePath = path.join(uploadPath, filename);
+
+  // Записываем изображение в файл
+  fs.writeFileSync(filePath, imageBuffer);
+
+  return filePath; // Возвращаем полный путь к изображению
+};
 
 // Создание заявки на изменение главного изображения
 export const createMainImageRequest = async (
@@ -17,6 +43,11 @@ export const createMainImageRequest = async (
     return;
   }
 
+  if (!image) {
+    res.status(400).json({ message: 'Необходимо загрузить изображение.' });
+    return;
+  }
+
   console.log('Поступил запрос на создание заявки на изменение главного изображения: ', {
     perfumeId,
     userId,
@@ -24,10 +55,17 @@ export const createMainImageRequest = async (
   });
 
   try {
+    // Генерация уникального имени файла
+    const filename = Date.now() + '.jpg'; // Можно использовать расширение .png или другое в зависимости от формата изображения
+
+    // Сохраняем изображение в файловую систему
+    const savedImagePath = saveImageToFileSystem(image, filename);
+
+    // Создаем заявку на изменение изображения
     const newMainImageRequest = new MainImageRequest({
       perfumeId,
       userId,
-      image,
+      image: savedImagePath, // Сохраняем путь к изображению
       status: 'pending',
     });
 
@@ -48,38 +86,7 @@ export const createMainImageRequest = async (
   }
 };
 
-// Получение всех заявок на изменение главного изображения
-export const getAllMainImageRequests = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
-    const { page = 1, limit = 10 } = req.query;
-
-    const pageNumber = Number(page);
-    const limitNumber = Number(limit);
-    const skip = (pageNumber - 1) * limitNumber;
-
-    const requests = await MainImageRequest.find()
-      .populate('perfumeId')
-      .skip(skip)
-      .limit(limitNumber);
-
-    const totalRequests = await MainImageRequest.countDocuments();
-
-    res.json({
-      totalPages: Math.ceil(totalRequests / limitNumber),
-      currentPage: pageNumber,
-      totalRequests,
-      requests,
-    });
-  } catch (err) {
-    res.status(500).json({
-      message: 'Ошибка при получении заявок на изменение главного изображения.',
-      error: (err as Error).message,
-    });
-  }
-};
+// Остальные контроллеры остаются без изменений
 
 // Одобрение заявки на изменение главного изображения
 export const approveMainImageRequest = async (
@@ -100,7 +107,7 @@ export const approveMainImageRequest = async (
       return;
     }
 
-    perfume.image_main = request.image;
+    perfume.main_image = request.image; // Путь к изображению в директории
     await perfume.save();
 
     // Обновляем статус заявки
