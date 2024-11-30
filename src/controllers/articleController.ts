@@ -1,8 +1,8 @@
 import { Request, Response } from 'express';
 import mongoose from 'mongoose';
 import ArticleRequest, { IComment } from '../models/articleModel'; // Модель и интерфейсы
-import userModel from '../models/userModel';
-
+import userModel, { IUser } from '../models/userModel';
+import sharp from 'sharp';
 // Создание заявки на добавление статьи
 export const createArticleRequest = async (
   req: Request,
@@ -522,15 +522,42 @@ export const getPopularArticles = async (req: Request, res: Response): Promise<v
   }
 };
 // Получение последних 9 статей по дате создания
+const compressBase64Image = async (base64Image: string): Promise<string> => {
+  const base64Data = base64Image.replace(/^data:image\/\w+;base64,/, ''); // Удаляем префикс Base64
+  const buffer = Buffer.from(base64Data, 'base64'); // Преобразуем Base64 в буфер
+
+  const compressedBuffer = await sharp(buffer)
+    .toFormat('jpeg', { quality: 70 }) // Сжимаем до 70% качества
+    .toBuffer();
+
+  return `data:image/jpeg;base64,${compressedBuffer.toString('base64')}`; // Возвращаем сжатое изображение в Base64
+};
+
 export const getLatestArticles = async (req: Request, res: Response): Promise<void> => {
   try {
-    // Сортируем по дате создания в порядке убывания и ограничиваем 9 статьями, добавляем populate
     const latestArticles = await ArticleRequest.find()
       .sort({ createdAt: -1 })
       .limit(9)
-      .populate('userId', 'username avatar'); // Подтягиваем username и avatar из User
+      .populate<{ userId: IUser }>('userId', 'username avatar');
 
-    res.json(latestArticles);
+    const articlesWithCompressedAvatars = await Promise.all(
+      latestArticles.map(async article => {
+        const user = article.userId;
+        if (typeof user === 'object' && 'avatar' in user && user.avatar) {
+          const compressedAvatar = await compressBase64Image(user.avatar);
+          return {
+            ...article.toObject(),
+            userId: {
+              ...user,
+              avatar: compressedAvatar,
+            },
+          };
+        }
+        return article.toObject();
+      })
+    );
+
+    res.json(articlesWithCompressedAvatars);
   } catch (err) {
     res.status(500).json({
       message: 'Ошибка при получении последних статей.',
@@ -538,6 +565,7 @@ export const getLatestArticles = async (req: Request, res: Response): Promise<vo
     });
   }
 };
+
 export const getAllComments = async (req: Request, res: Response): Promise<void> => {
   try {
     const page = parseInt(req.query.page as string, 10) || 1; // Номер страницы
