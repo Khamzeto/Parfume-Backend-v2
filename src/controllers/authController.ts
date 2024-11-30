@@ -5,7 +5,8 @@ import { Request, Response } from 'express';
 import { validationResult } from 'express-validator';
 import User, { IUser } from '../models/userModel';
 import perfumeModel from '../models/perfumeModel';
-
+import fs from 'fs';
+import path from 'path';
 // Настройка Nodemailer
 const transporter = nodemailer.createTransport({
   host: 'connect.smtp.bz', // Ваш SMTP-хост
@@ -273,7 +274,22 @@ export const getUserById = async (req: Request, res: Response): Promise<Response
     return res.status(500).json({ msg: 'Ошибка сервера', error: err.message });
   }
 };
+const saveBase64Image = (base64: string, userId: string): string => {
+  const base64Data = base64.replace(/^data:image\/\w+;base64,/, ''); // Убираем префикс Base64
+  const buffer = Buffer.from(base64Data, 'base64'); // Преобразуем в буфер
 
+  const uploadDir = path.join(__dirname, '..', 'uploads', 'avatars');
+  if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true }); // Создаем папку, если не существует
+  }
+
+  const fileName = `${userId}_${Date.now()}.jpg`; // Генерируем уникальное имя
+  const filePath = path.join(uploadDir, fileName);
+
+  fs.writeFileSync(filePath, buffer); // Сохраняем файл
+
+  return `/uploads/avatars/${fileName}`; // Относительный путь к файлу
+};
 // Обновление данных пользователя
 export const updateUser = async (req: Request, res: Response): Promise<Response> => {
   const {
@@ -300,7 +316,6 @@ export const updateUser = async (req: Request, res: Response): Promise<Response>
     // Обновление полей, учитывая пустые строки как удаление
     user.username = username ?? user.username;
     user.email = email ?? user.email;
-    user.avatar = avatar ?? user.avatar;
     user.description = description ?? user.description;
 
     if (roles) {
@@ -314,6 +329,12 @@ export const updateUser = async (req: Request, res: Response): Promise<Response>
     user.pinterestUrl = pinterestUrl === '' ? null : pinterestUrl || user.pinterestUrl;
     user.telegramUrl = telegramUrl === '' ? null : telegramUrl || user.telegramUrl;
 
+    // Сохраняем аватар, если он передан в Base64
+    if (avatar && avatar.startsWith('data:image/')) {
+      const avatarPath = saveBase64Image(avatar, userId);
+      user.avatar = avatarPath; // Сохраняем путь к файлу
+    }
+
     await user.save();
 
     return res.status(200).json({
@@ -322,7 +343,7 @@ export const updateUser = async (req: Request, res: Response): Promise<Response>
         id: user._id,
         username: user.username,
         email: user.email,
-        avatar: user.avatar,
+        avatar: user.avatar, // Возвращаем путь к файлу
         description: user.description,
         roles: user.roles,
         website: user.website,
