@@ -143,6 +143,37 @@ export const rejectMainImageRequest = async (
     });
   }
 };
+export const getAllMainImageRequests = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { page = 1, limit = 10 } = req.query;
+
+    const pageNumber = Number(page);
+    const limitNumber = Number(limit);
+    const skip = (pageNumber - 1) * limitNumber;
+
+    const requests = await MainImageRequest.find()
+      .populate('perfumeId')
+      .skip(skip)
+      .limit(limitNumber);
+
+    const totalRequests = await MainImageRequest.countDocuments();
+
+    res.json({
+      totalPages: Math.ceil(totalRequests / limitNumber),
+      currentPage: pageNumber,
+      totalRequests,
+      requests,
+    });
+  } catch (err) {
+    res.status(500).json({
+      message: 'Ошибка при получении заявок на изменение главного изображения.',
+      error: (err as Error).message,
+    });
+  }
+};
 
 // Удаление заявки на изменение главного изображения
 export const deleteMainImageRequest = async (
