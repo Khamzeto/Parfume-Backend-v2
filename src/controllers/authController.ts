@@ -275,35 +275,21 @@ export const getUserById = async (req: Request, res: Response): Promise<Response
   }
 };
 const saveBase64Image = (base64: string, userId: string): string => {
-  const match = base64.match(/^data:image\/(\w+);base64,/);
-  if (!match) {
-    throw new Error('Некорректный формат Base64');
-  }
-  const fileExtension = match[1]; // jpg, png, etc.
+  const base64Data = base64.replace(/^data:image\/\w+;base64,/, ''); // Убираем префикс Base64
+  const buffer = Buffer.from(base64Data, 'base64'); // Преобразуем в буфер
 
-  const base64Data = base64.replace(/^data:image\/\w+;base64,/, '');
-  const buffer = Buffer.from(base64Data, 'base64');
-
-  // Абсолютный путь к папке uploads
-  const uploadDir = path.join(__dirname, '..', '..', 'uploads', 'avatars');
+  const uploadDir = path.join(__dirname, '..', 'uploads', 'avatars');
   if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
+    fs.mkdirSync(uploadDir, { recursive: true }); // Создаем папку, если не существует
   }
 
-  const fileName = `${userId}_${Date.now()}.${fileExtension}`;
+  const fileName = `${userId}_${Date.now()}.jpg`; // Генерируем уникальное имя
   const filePath = path.join(uploadDir, fileName);
 
-  try {
-    fs.writeFileSync(filePath, buffer);
-    console.log(`Файл успешно сохранён: ${filePath}`);
-  } catch (error) {
-    console.error('Ошибка при сохранении файла:', error);
-    throw new Error('Не удалось сохранить файл');
-  }
+  fs.writeFileSync(filePath, buffer); // Сохраняем файл
 
-  return `/uploads/avatars/${fileName}`;
+  return `/uploads/avatars/${fileName}`; // Относительный путь к файлу
 };
-
 // Обновление данных пользователя
 export const updateUser = async (req: Request, res: Response): Promise<Response> => {
   const {
