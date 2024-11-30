@@ -98,7 +98,7 @@ export const approveMainImageRequest = async (
       return; // Return after sending response
     }
 
-    perfume.image_main = `images/${filename}`;
+    perfume.main_image = `images/${filename}`;
     await perfume.save();
 
     // Обновляем статус заявки
