@@ -75,8 +75,8 @@ const perfumeSchema: Schema = new Schema({
   perfume_id: { type: String, required: true },
   similar_perfumes: [
     {
-      perfume_id: { type: String, required: true },
-      main_image: { type: String, required: true },
+      perfume_id: { type: String, required: false },
+      main_image: { type: String, required: false },
     },
   ],
   tags: [String],
