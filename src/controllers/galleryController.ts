@@ -81,46 +81,44 @@ export const approveGalleryRequest = async (
   req: Request,
   res: Response
 ): Promise<void> => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
   try {
-    const request = await GalleryRequest.findById(req.params.id).session(session);
+    const request = await GalleryRequest.findById(req.params.id);
     if (!request) {
-      throw new Error('Заявка не найдена.');
+      res.status(404).json({ message: 'Заявка не найдена.' });
+      return;
     }
 
-    const perfume = await Perfume.findById(request.perfumeId).session(session);
+    const perfume = await Perfume.findById(request.perfumeId);
     if (!perfume) {
-      throw new Error('Парфюм не найден.');
+      res.status(404).json({ message: 'Парфюм не найден.' });
+      return;
     }
 
     if (!request.images || request.images.length === 0) {
-      throw new Error('Нет изображений для добавления.');
+      res.status(400).json({ message: 'Нет изображений для добавления.' });
+      return;
     }
 
     if (!perfume.gallery_images) {
       perfume.gallery_images = [];
     }
 
-    // Добавляем изображения без дубликатов
+    // Обновляем галерею, удаляя дубликаты
     perfume.gallery_images = Array.from(
       new Set([...perfume.gallery_images, ...request.images])
     );
-    await perfume.save({ session });
+    await perfume.save();
 
+    // Обновляем статус заявки
     request.status = 'approved';
-    await request.save({ session });
+    await request.save();
 
-    await session.commitTransaction();
     res.json({ message: 'Заявка одобрена и изображения добавлены в галерею парфюма.' });
   } catch (err) {
-    await session.abortTransaction();
     res.status(500).json({
       message: 'Ошибка при одобрении заявки на фото.',
       error: (err as Error).message,
     });
-  } finally {
-    session.endSession();
   }
 };
 
