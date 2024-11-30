@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import Perfume from '../models/perfumeModel';
 import GalleryRequest from '../models/galleryModel'; // Модель заявки на фото
+import mongoose from 'mongoose';
 
 // Создание заявки на добавление фото
 export const createGalleryRequest = async (
@@ -80,31 +81,46 @@ export const approveGalleryRequest = async (
   req: Request,
   res: Response
 ): Promise<void> => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
   try {
-    const request = await GalleryRequest.findById(req.params.id);
+    const request = await GalleryRequest.findById(req.params.id).session(session);
     if (!request) {
-      res.status(404).json({ message: 'Заявка не найдена.' });
-      return;
+      throw new Error('Заявка не найдена.');
     }
 
-    // Добавляем изображения из заявки в парфюм
-    const perfume = await Perfume.findById(request.perfumeId);
+    const perfume = await Perfume.findById(request.perfumeId).session(session);
     if (!perfume) {
-      res.status(404).json({ message: 'Парфюм не найден.' });
-      return;
+      throw new Error('Парфюм не найден.');
     }
 
-    // Обновляем галерею парфюма
-    perfume.gallery_images = [...perfume.gallery_images, ...request.images];
-    await perfume.save();
+    if (!request.images || request.images.length === 0) {
+      throw new Error('Нет изображений для добавления.');
+    }
 
-    // Обновляем статус заявки
+    if (!perfume.gallery_images) {
+      perfume.gallery_images = [];
+    }
+
+    // Добавляем изображения без дубликатов
+    perfume.gallery_images = Array.from(
+      new Set([...perfume.gallery_images, ...request.images])
+    );
+    await perfume.save({ session });
+
     request.status = 'approved';
-    await request.save();
+    await request.save({ session });
 
+    await session.commitTransaction();
     res.json({ message: 'Заявка одобрена и изображения добавлены в галерею парфюма.' });
   } catch (err) {
-    res.status(500).json({ message: 'Ошибка при одобрении заявки на фото.' });
+    await session.abortTransaction();
+    res.status(500).json({
+      message: 'Ошибка при одобрении заявки на фото.',
+      error: (err as Error).message,
+    });
+  } finally {
+    session.endSession();
   }
 };
 
