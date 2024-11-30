@@ -18,7 +18,14 @@ import passportConfig from './src/config/passport'; // Конфигурация 
 import passport from 'passport'; // Подключение passport
 import dotenv from 'dotenv';
 
+import path from 'path';
 const app: Application = express();
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+
+// Пример маршрута
+app.get('/', (req, res) => {
+  res.send('Сервер работает!');
+});
 const PORT = 3001;
 app.use(bodyParser.json({ limit: '10mb' }));
 app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }));
