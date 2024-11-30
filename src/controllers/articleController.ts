@@ -511,6 +511,7 @@ export const getPopularArticles = async (req: Request, res: Response): Promise<v
   try {
     const popularArticles = await ArticleRequest.find({ isPopular: true })
       .sort({ popularityScore: -1 }) // Сортировка по баллу популярности по убыванию
+      .select('-content') // Исключаем поле content
       .exec();
 
     res.json(popularArticles);
@@ -521,6 +522,7 @@ export const getPopularArticles = async (req: Request, res: Response): Promise<v
     });
   }
 };
+
 // Получение последних 9 статей по дате создания
 const compressBase64Image = async (base64Image: string): Promise<string> => {
   const base64Data = base64Image.replace(/^data:image\/\w+;base64,/, ''); // Удаляем префикс Base64
