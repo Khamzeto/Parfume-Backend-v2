@@ -432,8 +432,11 @@ export const getNewsById = async (req: Request, res: Response): Promise<void> =>
 // Получение последних 9 новостей по createdAt
 export const getLatestNews = async (req: Request, res: Response): Promise<void> => {
   try {
-    // Сортировка по убыванию даты создания и ограничение до 9 новостей
-    const latestNews = await NewsRequest.find().sort({ createdAt: -1 }).limit(9);
+    // Сортировка по убыванию даты создания, ограничение до 9 новостей, исключение поля content
+    const latestNews = await NewsRequest.find()
+      .sort({ createdAt: -1 })
+      .limit(9)
+      .select('-content'); // Исключаем поле content
 
     res.json(latestNews);
   } catch (err) {
@@ -443,6 +446,7 @@ export const getLatestNews = async (req: Request, res: Response): Promise<void> 
     });
   }
 };
+
 export const getAllComments = async (req: Request, res: Response): Promise<void> => {
   try {
     const page = parseInt(req.query.page as string, 10) || 1; // Номер страницы
