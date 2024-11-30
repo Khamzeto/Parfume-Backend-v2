@@ -165,7 +165,8 @@ export const getArticleRequestsByUserId = async (
       userId: new mongoose.Types.ObjectId(userId),
     })
       .skip(skip)
-      .limit(limitNumber);
+      .limit(limitNumber)
+      .select('-content'); // Исключаем поле 'content' из результата
 
     const totalRequests = await ArticleRequest.countDocuments({ userId });
 
