@@ -539,7 +539,7 @@ export const getLatestArticles = async (req: Request, res: Response): Promise<vo
     const latestArticles = await ArticleRequest.find()
       .sort({ createdAt: -1 })
       .limit(9)
-      .select('title description coverImage createdAt userId') // Исключаем content
+      .select('title description createdAt userId') // Исключаем content
       .populate<{ userId: IUser }>('userId', 'username avatar'); // Подтягиваем username и avatar пользователя
 
     // Обрабатываем аватары
