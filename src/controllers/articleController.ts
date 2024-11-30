@@ -535,33 +535,20 @@ const compressBase64Image = async (base64Image: string): Promise<string> => {
 
 export const getLatestArticles = async (req: Request, res: Response): Promise<void> => {
   try {
-    // Находим последние статьи без поля "content"
     const latestArticles = await ArticleRequest.find()
       .sort({ createdAt: -1 })
       .limit(9)
       .select('title description createdAt userId') // Исключаем content
       .populate<{ userId: IUser }>('userId', 'username avatar'); // Подтягиваем username и avatar пользователя
 
-    // Обрабатываем аватары
-    const articlesWithCompressedAvatars = await Promise.all(
-      latestArticles.map(async article => {
-        const user = article.userId;
-        if (typeof user === 'object' && 'avatar' in user && user.avatar) {
-          const compressedAvatar = await compressBase64Image(user.avatar); // Сжимаем аватар
-          return {
-            ...article.toObject(),
-            userId: {
-              ...user,
-              avatar: compressedAvatar, // Заменяем аватар на сжатую версию
-            },
-          };
-        }
-        return article.toObject();
-      })
-    );
+    // Формируем ответ без сжатия аватаров
+    const articlesWithAvatars = latestArticles.map(article => ({
+      ...article.toObject(),
+      userId: article.userId, // Возвращаем данные пользователя как есть
+    }));
 
     // Возвращаем результат
-    res.json(articlesWithCompressedAvatars);
+    res.json(articlesWithAvatars);
   } catch (err) {
     res.status(500).json({
       message: 'Ошибка при получении последних статей.',
