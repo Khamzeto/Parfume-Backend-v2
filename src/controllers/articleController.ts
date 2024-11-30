@@ -527,7 +527,7 @@ const compressBase64Image = async (base64Image: string): Promise<string> => {
   const buffer = Buffer.from(base64Data, 'base64'); // Преобразуем Base64 в буфер
 
   const compressedBuffer = await sharp(buffer)
-    .toFormat('jpeg', { quality: 70 }) // Сжимаем до 70% качества
+    .toFormat('jpeg', { quality: 90 }) // Сжимаем до 70% качества
     .toBuffer();
 
   return `data:image/jpeg;base64,${compressedBuffer.toString('base64')}`; // Возвращаем сжатое изображение в Base64
