@@ -5,30 +5,6 @@ import path from 'path';
 import fs from 'fs';
 
 // Функция для сохранения изображения в файловую систему
-const saveImageToFileSystem = (base64Image: string, filename: string): string => {
-  const matches = base64Image.match(/^data:image\/([a-zA-Z0-9]+);base64,([^\"]+)$/);
-  if (!matches || matches.length < 3) {
-    throw new Error('Неверный формат изображения');
-  }
-
-  const imageBuffer = Buffer.from(matches[2], 'base64');
-
-  // Указываем путь к директории, куда сохраняем изображения
-  const uploadPath = '/var/www/www-root/data/www/parfumetrika.ru/images';
-
-  // Проверяем, существует ли директория
-  if (!fs.existsSync(uploadPath)) {
-    fs.mkdirSync(uploadPath, { recursive: true }); // Создаем директорию, если ее нет
-  }
-
-  // Генерируем путь к файлу
-  const filePath = path.join(uploadPath, filename);
-
-  // Записываем изображение в файл
-  fs.writeFileSync(filePath, imageBuffer);
-
-  return filePath; // Возвращаем полный путь к изображению
-};
 
 // Создание заявки на изменение главного изображения
 export const createMainImageRequest = async (
@@ -77,7 +53,6 @@ export const createMainImageRequest = async (
 
 // Остальные контроллеры остаются без изменений
 
-// Одобрение заявки на изменение главного изображения
 export const approveMainImageRequest = async (
   req: Request,
   res: Response
@@ -86,29 +61,43 @@ export const approveMainImageRequest = async (
     const request = await MainImageRequest.findById(req.params.id);
     if (!request) {
       res.status(404).json({ message: 'Заявка не найдена.' });
-      return;
+      return; // Return after sending response
     }
 
-    // Декодируем изображение из base64
-    const imageBuffer = Buffer.from(request.image, 'base64');
-    const filename = `${Date.now()}.jpg`; // Генерация уникального имени для файла
+    // Проверка формата base64
+    const matches = request.image.match(/^data:image\/([a-zA-Z0-9]+);base64,([^\"]+)$/);
+    if (!matches || matches.length < 3) {
+      res.status(400).json({ message: 'Неверный формат изображения (base64).' });
+      return; // Return after sending response
+    }
 
+    const imageBuffer = Buffer.from(matches[2], 'base64');
+
+    // Генерация уникального имени файла
+    const filename = `${Date.now()}.jpg`;
+
+    // Путь для сохранения изображения
     const imagePath = path.join(
       '/var/www/www-root/data/www/parfumetrika.ru/images',
       filename
     );
 
-    // Сохраняем изображение на сервере
+    // Проверка на пустое изображение
+    if (imageBuffer.length === 0) {
+      res.status(400).json({ message: 'Изображение пустое после декодирования base64.' });
+      return; // Return after sending response
+    }
+
+    // Сохранение изображения
     fs.writeFileSync(imagePath, imageBuffer);
 
-    // Обновляем главный путь изображения в базе данных
+    // Обновляем путь к изображению в базе данных
     const perfume = await Perfume.findById(request.perfumeId);
     if (!perfume) {
       res.status(404).json({ message: 'Парфюм не найден.' });
-      return;
+      return; // Return after sending response
     }
 
-    // Обновляем путь к изображению в базе данных
     perfume.image_main = `images/${filename}`;
     await perfume.save();
 
@@ -118,8 +107,10 @@ export const approveMainImageRequest = async (
 
     res.json({ message: 'Заявка одобрена, изображение загружено.' });
   } catch (err) {
+    console.error('Ошибка при одобрении заявки:', err);
     res.status(500).json({
       message: 'Ошибка при одобрении заявки на изменение главного изображения.',
+      error: err instanceof Error ? err.message : 'Неизвестная ошибка',
     });
   }
 };
