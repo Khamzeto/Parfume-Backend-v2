@@ -396,6 +396,7 @@ export const removePopularity = async (req: Request, res: Response): Promise<voi
 export const getPopularNews = async (req: Request, res: Response): Promise<void> => {
   try {
     const popularNews = await NewsRequest.find({ isPopular: true })
+      .select('-content') // Исключаем поле content
       .sort({ popularityScore: -1 })
       .exec();
 
@@ -407,6 +408,7 @@ export const getPopularNews = async (req: Request, res: Response): Promise<void>
     });
   }
 };
+
 // Получение конкретной новости по ID
 export const getNewsById = async (req: Request, res: Response): Promise<void> => {
   const { id } = req.params;
