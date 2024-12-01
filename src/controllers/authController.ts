@@ -278,7 +278,10 @@ const saveBase64Image = (base64: string, userId: string): string => {
   const base64Data = base64.replace(/^data:image\/\w+;base64,/, ''); // Убираем префикс Base64
   const buffer = Buffer.from(base64Data, 'base64'); // Преобразуем в буфер
 
-  const uploadDir = path.join(__dirname, '..', 'uploads', 'avatars');
+  // Определяем корневую директорию проекта
+  const rootDir = path.resolve(__dirname, '..', '..'); // Поднимаемся на уровень выше из dist
+  const uploadDir = path.join(rootDir, 'uploads', 'avatars');
+
   if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true }); // Создаем папку, если не существует
   }
