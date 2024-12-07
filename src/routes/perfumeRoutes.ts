@@ -17,7 +17,8 @@ import {
   addCategoryRatings,
   getRecentReviews,
   getAllReviews,
-  deleteReview, // Импортируем функцию для добавления отзыва
+  deleteReview,
+  getAllPerfumeNames, // Импортируем функцию для добавления отзыва
 } from '../controllers/perfumeController';
 
 const router = express.Router();
@@ -34,7 +35,7 @@ router.get('/gallery/:perfumeId', getGalleryImages); // Get gallery images
 router.post('/perfumes/:perfume_id/rating', addCategoryRatings);
 // Route to retrieve perfumes by multiple IDs
 router.post('/by-ids', getPerfumesByIds);
-
+router.get('/names', getAllPerfumeNames);
 // Route for translating and updating all fields
 router.put('/translate-all', translateAndUpdateAllFields);
 
