@@ -873,8 +873,8 @@ export const deleteReview = async (req: Request, res: Response): Promise<void> =
 };
 export const getAllPerfumeNames = async (req: Request, res: Response): Promise<void> => {
   try {
-    // Извлекаем только поле "name" у всех парфюмов
-    const perfumes = await Perfume.find({}, 'name').lean();
+    // Извлекаем только поле "perfume_id" у всех парфюмов
+    const perfumes = await Perfume.find({}, 'perfume_id').lean();
 
     // Если парфюмы не найдены
     if (!perfumes.length) {
@@ -882,12 +882,12 @@ export const getAllPerfumeNames = async (req: Request, res: Response): Promise<v
       return;
     }
 
-    // Массив названий парфюмов
-    const perfumeNames = perfumes.map(perfume => perfume.name);
+    // Массив perfume_id парфюмов
+    const perfumeIds = perfumes.map(perfume => perfume.perfume_id);
 
-    res.status(200).json(perfumeNames);
+    res.status(200).json(perfumeIds);
   } catch (err) {
-    console.error('Ошибка при получении названий парфюмов:', err);
-    res.status(500).json({ message: 'Ошибка при получении названий парфюмов' });
+    console.error('Ошибка при получении идентификаторов парфюмов:', err);
+    res.status(500).json({ message: 'Ошибка при получении идентификаторов парфюмов' });
   }
 };
