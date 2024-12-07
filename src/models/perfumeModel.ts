@@ -1,5 +1,23 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
+// Интерфейс для индивидуальной оценки пользователя
+interface UserRating {
+  userId: mongoose.Types.ObjectId;
+  smell: number;
+  longevity: number;
+  sillage: number;
+  bottle: number;
+  priceValue: number;
+}
+
+// Интерфейс для отзыва
+interface Review {
+  _id: mongoose.Types.ObjectId;
+  userId: mongoose.Types.ObjectId;
+  body: string;
+  createdAt: Date;
+}
+
 // Интерфейс для парфюма
 export interface IPerfume extends Document {
   _id: mongoose.Types.ObjectId;
@@ -7,7 +25,10 @@ export interface IPerfume extends Document {
   brandTranslit?: string;
   brand: string;
   perfume_id: string;
-  similar_perfumes: string[];
+  similar_perfumes: {
+    perfume_id: string;
+    main_image: string;
+  }[];
   tags: string[];
   description: string;
   description_links: { text: string; href: string }[];
@@ -19,31 +40,45 @@ export interface IPerfume extends Document {
     base_notes: string[];
     additional_notes: string[];
   };
-  name_ru?: string;  // Поле может быть необязательным
-  brand_ru?: string; 
+  name_ru?: string;
+  brand_ru?: string;
   release_year: number;
   gender: string;
   main_image: string;
+  image_main: string; // Добавлено новое поле
   additional_images: string[];
+  gallery_images: string[];
   perfumers: string[];
-  perfumers_en: string[]; 
-  reviews: {
-    username: string;
-    nickname: string;
-    body: string;
-    ratings: Record<string, any>;
-    awards: string;
-    comments: string;
-  }[]; // Update reviews to be an array of objects
+  perfumers_en: string[];
+  reviews: Review[];
+  rating_count: number;
+  rating_value: number;
+  scent_ratings: number[];
+  longevity_ratings: number[];
+  sillage_ratings: number[];
+  packaging_ratings: number[];
+  value_ratings: number[];
+  user_ratings: UserRating[];
 }
 
 // Определение схемы для коллекции "perfumes"
-// Определение схемы для коллекции "perfumes"
+const reviewSchema = new Schema({
+  _id: { type: Schema.Types.ObjectId, default: () => new mongoose.Types.ObjectId() },
+  userId: { type: Schema.Types.ObjectId, ref: 'User', required: false },
+  body: { type: String, required: true },
+  createdAt: { type: Date, default: Date.now },
+});
+
 const perfumeSchema: Schema = new Schema({
   name: { type: String, required: true },
   brand: { type: String, required: true },
   perfume_id: { type: String, required: true },
-  similar_perfumes: [String],
+  similar_perfumes: [
+    {
+      perfume_id: { type: String, required: false },
+      main_image: { type: String, required: false },
+    },
+  ],
   tags: [String],
   description: String,
   description_links: [{ text: String, href: String }],
@@ -58,17 +93,27 @@ const perfumeSchema: Schema = new Schema({
   release_year: Number,
   gender: String,
   main_image: String,
+  image_main: String, // Добавлено новое поле
   additional_images: [String],
+  gallery_images: [String],
   perfumers: [String],
   perfumers_en: [String],
-  reviews: [
+  reviews: [reviewSchema],
+  rating_count: { type: Number, default: 0 },
+  rating_value: { type: Number, default: 0 },
+  scent_ratings: { type: [Number], default: [] },
+  longevity_ratings: { type: [Number], default: [] },
+  sillage_ratings: { type: [Number], default: [] },
+  packaging_ratings: { type: [Number], default: [] },
+  value_ratings: { type: [Number], default: [] },
+  user_ratings: [
     {
-      username: { type: String, required: true },
-      nickname: { type: String, required: true },
-      body: { type: String, required: true },
-      ratings: { type: Schema.Types.Mixed, default: {} },
-      awards: { type: String, default: '0' },
-      comments: { type: String, default: '0' },
+      userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+      smell: { type: Number, required: true },
+      longevity: { type: Number, required: true },
+      sillage: { type: Number, required: true },
+      bottle: { type: Number, required: true },
+      priceValue: { type: Number, required: true },
     },
   ],
 });
