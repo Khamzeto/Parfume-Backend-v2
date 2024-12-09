@@ -4,18 +4,34 @@ import express from 'express';
 import passport from 'passport';
 import { Request, Response, NextFunction } from 'express';
 import { body } from 'express-validator';
-import { register, login, logout } from '../controllers/authController';
+import {
+  register,
+  login,
+  logout,
+  getUsers,
+  getUserById,
+  assignRole,
+  removeRole,
+  updateUser,
+  activateAccount,
+  adminLogin,
+} from '../controllers/authController';
 import jwt from 'jsonwebtoken';
 import { jwtSecret } from '../config';
+import { checkRole } from '../middleware/roleMiddleware';
 
 const router = express.Router();
 
 // Интерфейс для расширения Request и добавления свойства user
 interface AuthRequest extends Request {
-  user: any; // Замените `any` на ваш интерфейс пользователя, если он есть
+  user?: any; // Свойство 'user' теперь опционально
 }
 
-// Регистрация пользователя
+router.post('/assign-role', assignRole);
+
+// Маршрут для удаления роли (только для админов)
+router.post('/remove-role', checkRole(['editor']), removeRole);
+
 router.post(
   '/register',
   [
@@ -27,18 +43,13 @@ router.post(
 );
 
 // Логин пользователя
-router.post(
-  '/login',
-  [
-    body('email', 'Введите корректный email').isEmail(),
-    body('password', 'Пароль обязателен').exists(),
-  ],
-  login
-);
+router.post('/login', login);
+router.post('/admin', adminLogin);
+router.post('/activate', activateAccount);
 
 // Выход
 router.get('/logout', logout);
-
+router.put('/change/:id', updateUser);
 // Аутентификация через ВКонтакте
 router.get('/vkontakte', passport.authenticate('vkontakte', { session: false }));
 
@@ -69,5 +80,6 @@ router.get(
     res.redirect(`http://localhost:3000/?token=${token}`); // Перенаправление на фронтенд с токеном
   }
 );
+
 
 export default router;
