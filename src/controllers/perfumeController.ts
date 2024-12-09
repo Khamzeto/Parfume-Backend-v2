@@ -470,7 +470,7 @@ export const updatePerfume = async (req: Request, res: Response): Promise<void> 
 // Удаление парфюма по ID
 export const deletePerfume = async (req: Request, res: Response): Promise<void> => {
   try {
-    const perfume = await Perfume.findOneAndDelete({ perfume_id: req.params.perfume_id });
+    const perfume = await Perfume.findOneAndDelete({ perfume_id: req.params.id });
     if (!perfume) {
       res.status(404).json({ message: 'Perfume not found' });
       return;
