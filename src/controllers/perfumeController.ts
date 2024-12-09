@@ -470,7 +470,7 @@ export const updatePerfume = async (req: Request, res: Response): Promise<void> 
 // Удаление парфюма по ID
 export const deletePerfume = async (req: Request, res: Response): Promise<void> => {
   try {
-    const perfume = await Perfume.findByIdAndDelete(req.params.id);
+    const perfume = await Perfume.findOneAndDelete({ perfume_id: req.params.perfume_id });
     if (!perfume) {
       res.status(404).json({ message: 'Perfume not found' });
       return;
@@ -480,6 +480,7 @@ export const deletePerfume = async (req: Request, res: Response): Promise<void> 
     res.status(500).json({ message: (err as Error).message });
   }
 };
+
 export const uploadGalleryImages = async (req: Request, res: Response) => {
   const { perfumeId } = req.params;
   const { images } = req.body; // Массив изображений в формате base64
