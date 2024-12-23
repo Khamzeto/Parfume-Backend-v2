@@ -1,8 +1,31 @@
 import { Request, Response } from 'express';
 import mongoose from 'mongoose';
 import NewsRequest, { IComment } from '../models/newsModel'; // Модель и интерфейсы
-
+import path from 'path';
+import fs from 'fs';
 // Создание новости
+const saveBase64Image = (base64: string): string => {
+  const base64Data = base64.replace(/^data:image\/\w+;base64,/, ''); // Убираем префикс Base64
+  const buffer = Buffer.from(base64Data, 'base64'); // Преобразуем в буфер
+
+  const rootDir = path.resolve(__dirname, '..', '..'); // Корень проекта
+  const uploadDir = path.join(rootDir, 'uploads', 'avatars'); // Путь к папке для изображений
+
+  if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true }); // Создаем папку, если её нет
+  }
+
+  // Генерация уникального имени файла
+  const uniquePrefix = `${Date.now()}_${Math.floor(Math.random() * 1e6)}`;
+  const fileName = `${uniquePrefix}.jpg`; // Уникальное имя файла
+  const filePath = path.join(uploadDir, fileName);
+
+  fs.writeFileSync(filePath, buffer); // Сохраняем файл на диск
+
+  return `/avatars/news/${fileName}`; // Относительный путь к файлу
+};
+
+// Обработчик создания новости
 export const createNewsRequest = async (req: Request, res: Response): Promise<void> => {
   const { title, description, content, coverImage, userId } = req.body;
 
@@ -12,17 +35,24 @@ export const createNewsRequest = async (req: Request, res: Response): Promise<vo
   }
 
   try {
+    // Сохраняем изображение, если оно передано
+    let coverImagePath: string | undefined;
+    if (coverImage && coverImage.startsWith('data:image/')) {
+      coverImagePath = saveBase64Image(coverImage); // Используем функцию с уникальным именем
+    }
+
     const newNewsRequest = new NewsRequest({
       title,
       description,
       content,
-      coverImage,
+      coverImage: coverImagePath, // Сохраняем путь к изображению
       userId: new mongoose.Types.ObjectId(userId),
     });
 
     await newNewsRequest.save();
     res.status(201).json({
       message: 'Новость создана.',
+      news: newNewsRequest, // Возвращаем созданную новость
     });
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : 'Неизвестная ошибка';
