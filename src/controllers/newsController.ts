@@ -22,7 +22,7 @@ const saveBase64Image = (base64: string): string => {
 
   fs.writeFileSync(filePath, buffer); // Сохраняем файл на диск
 
-  return `/avatars/news/${fileName}`; // Относительный путь к файлу
+  return `/uploads/avatars/${fileName}`; // Относительный путь к файлу
 };
 
 // Обработчик создания новости
