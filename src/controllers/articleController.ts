@@ -3,7 +3,29 @@ import mongoose from 'mongoose';
 import ArticleRequest, { IComment } from '../models/articleModel'; // Модель и интерфейсы
 import userModel, { IUser } from '../models/userModel';
 import sharp from 'sharp';
-// Создание заявки на добавление статьи
+import path from 'path';
+import fs from 'fs';
+
+const saveBase64Image = (base64: string): string => {
+  const base64Data = base64.replace(/^data:image\/\w+;base64,/, ''); // Убираем префикс Base64
+  const buffer = Buffer.from(base64Data, 'base64'); // Преобразуем в буфер
+
+  const rootDir = path.resolve(__dirname, '..', '..'); // Корень проекта
+  const uploadDir = path.join(rootDir, 'uploads', 'avatars'); // Путь к папке для изображений
+
+  if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true }); // Создаем папку, если её нет
+  }
+
+  // Генерация уникального имени файла
+  const uniquePrefix = `${Date.now()}_${Math.floor(Math.random() * 1e6)}`;
+  const fileName = `${uniquePrefix}.jpg`; // Уникальное имя файла
+  const filePath = path.join(uploadDir, fileName);
+
+  fs.writeFileSync(filePath, buffer); // Сохраняем файл на диск
+
+  return `/uploads/avatars/${fileName}`; // Относительный путь к файлу
+};
 export const createArticleRequest = async (
   req: Request,
   res: Response
@@ -16,11 +38,17 @@ export const createArticleRequest = async (
   }
 
   try {
+    // Сохраняем изображение, если оно передано
+    let coverImagePath: string | undefined;
+    if (coverImage && coverImage.startsWith('data:image/')) {
+      coverImagePath = saveBase64Image(coverImage); // Сохраняем изображение и получаем путь
+    }
+
     const newArticleRequest = new ArticleRequest({
       title,
       description,
       content,
-      coverImage, // Сохраняем обложку статьи
+      coverImage: coverImagePath, // Сохраняем путь к изображению
       userId: new mongoose.Types.ObjectId(userId), // Приводим userId к ObjectId
       status: 'pending', // Устанавливаем статус на 'pending' при создании
     });
@@ -28,6 +56,7 @@ export const createArticleRequest = async (
     await newArticleRequest.save();
     res.status(201).json({
       message: 'Заявка на добавление статьи создана и отправлена на рассмотрение.',
+      article: newArticleRequest, // Возвращаем созданную статью
     });
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : 'Неизвестная ошибка';
