@@ -5,49 +5,54 @@ import { transliterate as tr } from 'transliteration'; // Импорт тран�
 
 export const extractAndSaveNotes = async (req: Request, res: Response): Promise<void> => {
   try {
-    // Шаг 1: Извлекаем все парфюмы
-    const perfumes = await perfumeModel.find({}, 'notes'); // Извлекаем только ноты
+    // Шаг 1: Стримим парфюмы из базы данных
+    const perfumeCursor = perfumeModel.find({}, 'notes').cursor();
+    let allNotes: Set<string> = new Set();
 
-    let allNotes: string[] = [];
-
-    // Шаг 2: Проходим по каждому парфюму и собираем ноты
-    perfumes.forEach(perfume => {
+    for await (const perfume of perfumeCursor) {
       const { notes } = perfume;
 
       if (notes) {
-        const { top_notes, heart_notes, base_notes, additional_notes } = notes;
+        const {
+          top_notes = [],
+          heart_notes = [],
+          base_notes = [],
+          additional_notes = [],
+        } = notes;
 
-        // Собираем все ноты в один массив
-        allNotes = [
-          ...allNotes,
-          ...top_notes,
-          ...heart_notes,
-          ...base_notes,
-          ...additional_notes,
-        ];
+        // Добавляем ноты в Set (автоматически исключает дубликаты)
+        top_notes.forEach(note => allNotes.add(note));
+        heart_notes.forEach(note => allNotes.add(note));
+        base_notes.forEach(note => allNotes.add(note));
+        additional_notes.forEach(note => allNotes.add(note));
       }
-    });
+    }
 
-    // Шаг 3: Удаляем дубликаты нот
-    const uniqueNotes = Array.from(new Set(allNotes.filter(Boolean))); // Убираем пустые строки и дубликаты
+    // Конвертируем Set в массив для сохранения
+    const uniqueNotes = Array.from(allNotes).filter(Boolean);
 
-    // Шаг 4: Сохраняем уникальные ноты в отдельную коллекцию
-    await Promise.all(
-      uniqueNotes.map(async note => {
-        try {
-          // Сохраняем ноту, если её ещё нет в коллекции
-          await noteModel.updateOne(
-            { name: note }, // Критерий поиска
-            { $setOnInsert: { name: note } }, // Добавляем ноту, если она ещё не существует
-            { upsert: true } // Вставляем, если не найдено совпадений
-          );
-        } catch (error) {
-          console.error(`Error saving note: ${note}`, error);
-        }
-      })
-    );
+    // Шаг 2: Сохраняем ноты батчами
+    const batchSize = 100; // Размер партии
+    for (let i = 0; i < uniqueNotes.length; i += batchSize) {
+      const batch = uniqueNotes.slice(i, i + batchSize);
 
-    // Шаг 5: Возвращаем успешный ответ
+      // Выполняем updateOne для каждой ноты в батче
+      await Promise.all(
+        batch.map(async note => {
+          try {
+            await noteModel.updateOne(
+              { name: note }, // Критерий поиска
+              { $setOnInsert: { name: note } }, // Добавляем, если не существует
+              { upsert: true } // Вставляем, если не найдено
+            );
+          } catch (error) {
+            console.error(`Error saving note: ${note}`, error);
+          }
+        })
+      );
+    }
+
+    // Шаг 3: Возвращаем успешный ответ
     res
       .status(200)
       .json({ message: 'Notes successfully extracted and saved', uniqueNotes });
@@ -56,6 +61,7 @@ export const extractAndSaveNotes = async (req: Request, res: Response): Promise<
     res.status(500).json({ message: 'Failed to extract and save notes', error: err });
   }
 };
+
 export const getAllNotes = async (req: Request, res: Response): Promise<void> => {
   try {
     // Получаем все ноты из базы данных
