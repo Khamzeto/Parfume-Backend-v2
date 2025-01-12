@@ -567,16 +567,9 @@ const compressBase64Image = async (base64Image: string): Promise<string> => {
 
 export const getLatestArticles = async (req: Request, res: Response): Promise<void> => {
   try {
-    // Получаем параметр skip из запроса, по умолчанию 0
-    const skip = parseInt(req.query.skip as string) || 0;
-
-    // Устанавливаем лимит на количество статей
-    const limit = 9;
-
     const latestArticles = await ArticleRequest.find()
       .sort({ createdAt: -1 })
-      .skip(skip) // Пропускаем указанное количество записей
-      .limit(limit) // Ограничиваем количество записей
+      .limit(9)
       .select('title description createdAt userId coverImage') // Исключаем content
       .populate<{ userId: IUser }>('userId', 'username avatar'); // Подтягиваем username и avatar пользователя
 
@@ -587,10 +580,7 @@ export const getLatestArticles = async (req: Request, res: Response): Promise<vo
     }));
 
     // Возвращаем результат
-    res.json({
-      articles: articlesWithAvatars,
-      hasMore: latestArticles.length === limit, // Указываем, есть ли еще статьи для загрузки
-    });
+    res.json(articlesWithAvatars);
   } catch (err) {
     res.status(500).json({
       message: 'Ошибка при получении последних статей.',

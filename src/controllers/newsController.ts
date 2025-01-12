@@ -462,23 +462,13 @@ export const getNewsById = async (req: Request, res: Response): Promise<void> =>
 // Получение последних 9 новостей по createdAt
 export const getLatestNews = async (req: Request, res: Response): Promise<void> => {
   try {
-    // Получаем параметр skip из запроса, по умолчанию 0
-    const skip = parseInt(req.query.skip as string) || 0;
-
-    // Устанавливаем лимит на количество новостей
-    const limit = 9;
-
-    // Сортировка по убыванию даты создания, пропуск записей, ограничение и исключение поля content
+    // Сортировка по убыванию даты создания, ограничение до 9 новостей, исключение поля content
     const latestNews = await NewsRequest.find()
       .sort({ createdAt: -1 })
-      .skip(skip) // Пропускаем указанное количество записей
-      .limit(limit) // Ограничиваем количество записей
+      .limit(9)
       .select('-content'); // Исключаем поле content
 
-    res.json({
-      news: latestNews,
-      hasMore: latestNews.length === limit, // Указываем, есть ли еще новости для загрузки
-    });
+    res.json(latestNews);
   } catch (err) {
     res.status(500).json({
       message: 'Ошибка при получении последних новостей.',
