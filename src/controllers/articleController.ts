@@ -567,8 +567,15 @@ const compressBase64Image = async (base64Image: string): Promise<string> => {
 
 export const getLatestArticles = async (req: Request, res: Response): Promise<void> => {
   try {
+    // Получаем параметры запроса: skip
+    const { skip = 0 } = req.query;
+
+    // Преобразуем skip в число (на случай, если оно приходит как строка)
+    const skipValue = parseInt(skip as string, 10) || 0;
+
     const latestArticles = await ArticleRequest.find()
       .sort({ createdAt: -1 })
+      .skip(skipValue)
       .limit(9)
       .select('title description createdAt userId coverImage') // Исключаем content
       .populate<{ userId: IUser }>('userId', 'username avatar'); // Подтягиваем username и avatar пользователя

@@ -462,9 +462,16 @@ export const getNewsById = async (req: Request, res: Response): Promise<void> =>
 // Получение последних 9 новостей по createdAt
 export const getLatestNews = async (req: Request, res: Response): Promise<void> => {
   try {
+    // Получаем параметры запроса: skip
+    const { skip = 0 } = req.query;
+
+    // Преобразуем skip в число (на случай, если оно приходит как строка)
+    const skipValue = parseInt(skip as string, 10) || 0;
+
     // Сортировка по убыванию даты создания, ограничение до 9 новостей, исключение поля content
     const latestNews = await NewsRequest.find()
       .sort({ createdAt: -1 })
+      .skip(skipValue)
       .limit(9)
       .select('-content'); // Исключаем поле content
 
