@@ -22,6 +22,8 @@ export interface IUser extends Document {
   youtubeUrl?: string;
   pinterestUrl?: string;
   telegramUrl?: string;
+  resetPasswordToken?: string; // Токен для сброса пароля
+  resetPasswordExpires?: Date; // Срок действия токена сброса пароля
   isValidPassword(password: string): Promise<boolean>;
 }
 
@@ -107,6 +109,14 @@ const UserSchema: Schema<IUser> = new Schema({
   },
   telegramUrl: {
     type: String,
+    default: null,
+  },
+  resetPasswordToken: {
+    type: String,
+    default: null,
+  },
+  resetPasswordExpires: {
+    type: Date,
     default: null,
   },
 });

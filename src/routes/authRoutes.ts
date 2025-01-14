@@ -15,6 +15,8 @@ import {
   updateUser,
   activateAccount,
   adminLogin,
+  resetPassword,
+  forgotPassword,
 } from '../controllers/authController';
 import jwt from 'jsonwebtoken';
 import { jwtSecret } from '../config';
@@ -28,6 +30,10 @@ interface AuthRequest extends Request {
 }
 
 router.post('/assign-role', assignRole);
+router.post('/forgot-password', forgotPassword);
+
+// Роут для сброса пароля
+router.post('/reset-password', resetPassword);
 
 // Маршрут для удаления роли (только для админов)
 router.post('/remove-role', checkRole(['editor']), removeRole);
@@ -80,6 +86,5 @@ router.get(
     res.redirect(`http://localhost:3000/?token=${token}`); // Перенаправление на фронтенд с токеном
   }
 );
-
 
 export default router;

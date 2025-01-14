@@ -114,6 +114,65 @@ export const activateAccount = async (req: Request, res: Response): Promise<Resp
     return res.status(500).json({ msg: 'Ошибка сервера', error: err.message });
   }
 };
+// Request password reset
+export const forgotPassword = async (req: Request, res: Response): Promise<Response> => {
+  const { email } = req.body;
+
+  try {
+    const user: IUser | null = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ msg: 'Пользователь с таким email не найден' });
+    }
+
+    const resetToken = jwt.sign({ id: user._id }, jwtSecret, { expiresIn: '1h' });
+
+    user.resetPasswordToken = resetToken;
+    user.resetPasswordExpires = new Date(Date.now() + 3600000); // 1 час
+
+    await user.save();
+
+    const resetLink = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
+
+    const mailOptions = {
+      from: 'noreply@parfumetrika.ru',
+      to: user.email,
+      subject: 'Сброс пароля',
+      text: `Перейдите по ссылке, чтобы сбросить пароль: ${resetLink}`,
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    return res.status(200).json({ msg: 'Письмо для сброса пароля отправлено.' });
+  } catch (err: any) {
+    return res.status(500).json({ msg: 'Ошибка сервера', error: err.message });
+  }
+};
+export const resetPassword = async (req: Request, res: Response): Promise<Response> => {
+  const { token, newPassword } = req.body;
+
+  try {
+    const decoded: any = jwt.verify(token, jwtSecret);
+    const user: IUser | null = await User.findById(decoded.id);
+
+    if (!user || !user.resetPasswordToken || user.resetPasswordToken !== token) {
+      return res.status(400).json({ msg: 'Неверный или истёкший токен' });
+    }
+
+    if (user.resetPasswordExpires && user.resetPasswordExpires < new Date()) {
+      return res.status(400).json({ msg: 'Срок действия токена истёк' });
+    }
+
+    user.password = await argon2.hash(newPassword);
+    user.resetPasswordToken = undefined; // Удаляем токен
+    user.resetPasswordExpires = undefined; // Удаляем срок действия
+
+    await user.save();
+
+    return res.status(200).json({ msg: 'Пароль успешно сброшен.' });
+  } catch (err: any) {
+    return res.status(500).json({ msg: 'Ошибка сервера', error: err.message });
+  }
+};
 
 // Функция логина
 export const login = async (req: Request, res: Response): Promise<Response> => {

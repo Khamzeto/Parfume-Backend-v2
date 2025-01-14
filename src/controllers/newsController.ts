@@ -459,7 +459,7 @@ export const getNewsById = async (req: Request, res: Response): Promise<void> =>
     });
   }
 };
-// Получение последних 9 новостей по createdAt
+ 
 export const getLatestNews = async (req: Request, res: Response): Promise<void> => {
   try {
     // Получаем параметры запроса: skip
