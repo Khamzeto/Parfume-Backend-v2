@@ -131,7 +131,7 @@ export const forgotPassword = async (req: Request, res: Response): Promise<Respo
 
     await user.save();
 
-    const resetLink = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
+    const resetLink = `https://parfumetrika.ru/reset-password/${resetToken}`;
 
     const mailOptions = {
       from: 'noreply@parfumetrika.ru',
