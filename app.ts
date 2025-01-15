@@ -6,11 +6,29 @@ import brandRoutes from './src/routes/brandRoutes'; // Импорт маршру
 import noteRoutes from './src/routes/noteRoutes';
 import requestRoutes from './src/routes/requestRoutes';
 import authRoutes from './src/routes/authRoutes';
+import userRoutes from './src/routes/userRoutes';
+import galleryRoutes from './src/routes/galleryRoutes';
+import mainImageRoutes from './src/routes/mainImageRoutes';
+import articleRoutes from './src/routes/articleRoutes';
+import newsRoutes from './src/routes/newsRoutes';
+import shopRoutes from './src/routes/shopRoutes';
+import bodyParser from 'body-parser';
 import cors from 'cors';
+import passportConfig from './src/config/passport'; // Конфигурация passport
+import passport from 'passport'; // Подключение passport
+import dotenv from 'dotenv';
 
+import path from 'path';
 const app: Application = express();
-const PORT = 3001;
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
+// Пример маршрута
+app.get('/', (req, res) => {
+  res.send('Сервер работает!');
+});
+const PORT = 3001;
+app.use(bodyParser.json({ limit: '10mb' }));
+app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }));
 // Подключение к MongoDB
 connectDB();
 
@@ -23,7 +41,13 @@ const allowedOrigins = [
   'http://172.20.10.2:3001',
   'http://172.20.10.5:3001',
   'http://81.29.136.136:3000',
+  'https://parfumetrika.ru',
+  'https://www.parfumetrika.ru',
+  'https://hltdot.parfumetrika.ru',
 ];
+passportConfig(passport);
+dotenv.config();
+app.use(passport.initialize());
 
 // Настройка CORS с проверкой источника
 app.use(
@@ -49,11 +73,16 @@ app.use(express.json());
 app.use('/perfumes', perfumeRoutes);
 app.use('/parfumers', parfumerRoutes);
 app.use('/notes', noteRoutes);
+app.use('/shops', shopRoutes);
 // Использование маршрутов для брендов
 app.use('/brands', brandRoutes);
 app.use('/requests', requestRoutes);
 app.use('/auth', authRoutes);
-
+app.use('/users', userRoutes);
+app.use('/gallery', galleryRoutes);
+app.use('/article', articleRoutes);
+app.use('/news', newsRoutes);
+app.use('/main-image', mainImageRoutes);
 // Запуск сервера
 app.listen(PORT, () => {
   console.log(`Сервер запущен на http://localhost:${PORT}`);
