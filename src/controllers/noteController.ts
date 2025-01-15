@@ -61,6 +61,61 @@ export const extractAndSaveNotes = async (req: Request, res: Response): Promise<
     res.status(500).json({ message: 'Failed to extract and save notes', error: err });
   }
 };
+export const extractAndSaveNotes2 = async (): Promise<void> => {
+  try {
+    // Шаг 1: Стримим парфюмы из базы данных
+    const perfumeCursor = perfumeModel.find({}, 'notes').cursor();
+    let allNotes: Set<string> = new Set();
+
+    for await (const perfume of perfumeCursor) {
+      const { notes } = perfume;
+
+      if (notes) {
+        const {
+          top_notes = [],
+          heart_notes = [],
+          base_notes = [],
+          additional_notes = [],
+        } = notes;
+
+        // Добавляем ноты в Set (автоматически исключает дубликаты)
+        top_notes.forEach(note => allNotes.add(note));
+        heart_notes.forEach(note => allNotes.add(note));
+        base_notes.forEach(note => allNotes.add(note));
+        additional_notes.forEach(note => allNotes.add(note));
+      }
+    }
+
+    // Конвертируем Set в массив для сохранения
+    const uniqueNotes = Array.from(allNotes).filter(Boolean);
+
+    // Шаг 2: Сохраняем ноты батчами
+    const batchSize = 100; // Размер партии
+    for (let i = 0; i < uniqueNotes.length; i += batchSize) {
+      const batch = uniqueNotes.slice(i, i + batchSize);
+
+      // Выполняем updateOne для каждой ноты в батче
+      await Promise.all(
+        batch.map(async note => {
+          try {
+            await noteModel.updateOne(
+              { name: note }, // Критерий поиска
+              { $setOnInsert: { name: note } }, // Добавляем, если не существует
+              { upsert: true } // Вставляем, если не найдено
+            );
+          } catch (error) {
+            console.error(`Error saving note: ${note}`, error);
+          }
+        })
+      );
+    }
+
+    console.log('Notes successfully extracted and saved');
+  } catch (err) {
+    console.error('Failed to extract and save notes', err);
+    throw err; // Rethrow the error for further handling
+  }
+};
 
 export const getAllNotes = async (req: Request, res: Response): Promise<void> => {
   try {

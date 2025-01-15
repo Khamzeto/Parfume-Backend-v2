@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import Perfume from '../models/perfumeModel';
 import RequestModel from '../models/requestModel'; // Модель заявки
+import { extractAndSaveNotes, extractAndSaveNotes2 } from './noteController';
 
 // Создание заявки
 export const createRequest = async (req: Request, res: Response): Promise<void> => {
@@ -80,6 +81,7 @@ export const approveRequest = async (req: Request, res: Response): Promise<void>
 
     request.status = 'approved';
     await request.save();
+    await extractAndSaveNotes2();
 
     res.json({ message: 'Заявка одобрена и изменения применены.' });
   } catch (err: any) {
