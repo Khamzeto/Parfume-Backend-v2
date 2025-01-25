@@ -19,8 +19,98 @@ import passport from 'passport'; // Подключение passport
 import dotenv from 'dotenv';
 
 import path from 'path';
+
 const app: Application = express();
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+import { SitemapStream, streamToPromise } from 'sitemap';
+import { Request, Response } from 'express';
+import perfumeModel from './src/models/perfumeModel';
+
+// Добавьте этот маршрут в ваш код
+app.get('/sitemap.xml', async (req: Request, res: Response) => {
+  try {
+    const sitemap = new SitemapStream({ hostname: 'https://parfumetrika.ru' });
+
+    // Добавляем основные маршруты
+    sitemap.write({ url: '/', changefreq: 'daily', priority: 1.0 });
+    sitemap.write({ url: '/perfumes', changefreq: 'weekly', priority: 0.8 });
+    sitemap.write({ url: '/parfumers', changefreq: 'weekly', priority: 0.8 });
+    sitemap.write({ url: '/brands', changefreq: 'weekly', priority: 0.7 });
+    sitemap.write({ url: '/notes', changefreq: 'weekly', priority: 0.7 });
+    sitemap.write({ url: '/shops', changefreq: 'weekly', priority: 0.6 });
+    sitemap.write({ url: '/news', changefreq: 'daily', priority: 0.9 });
+
+    // Подсчитываем общее количество парфюмов
+    const totalPerfumes = await perfumeModel.countDocuments();
+    const perfumesPerPage = 5000; // Количество парфюмов на одну страницу
+    const totalPages = Math.ceil(totalPerfumes / perfumesPerPage);
+
+    // Генерация ссылок на вложенные сайтмапы
+    for (let page = 1; page <= totalPages; page++) {
+      sitemap.write({
+        url: `/sitemap-perfumes-${page}.xml`,
+        changefreq: 'weekly',
+        priority: 0.8,
+      });
+    }
+
+    sitemap.end();
+
+    const sitemapXML = await streamToPromise(sitemap);
+    res.header('Content-Type', 'application/xml');
+    res.send(sitemapXML.toString());
+  } catch (error) {
+    console.error('Ошибка генерации sitemap:', error);
+    res.status(500).send('Ошибка генерации sitemap');
+  }
+});
+app.get('/sitemap-perfumes-:page.xml', async (req: Request, res: Response) => {
+  try {
+    const page = parseInt(req.params.page, 10); // Номер страницы
+    const perfumesPerPage = 5000; // Лимит записей на странице
+    const skip = (page - 1) * perfumesPerPage; // Сколько записей пропустить
+
+    if (page < 1) {
+      return res.status(400).json({ message: 'Номер страницы должен быть больше 0.' });
+    }
+
+    const perfumes = await perfumeModel
+      .find({})
+      .select('main_image name perfume_id') // Выбираем только необходимые поля
+      .skip(skip)
+      .limit(perfumesPerPage);
+
+    if (perfumes.length === 0) {
+      return res.status(404).json({ message: 'Нет данных для этой страницы.' });
+    }
+
+    const sitemap = new SitemapStream({ hostname: 'https://parfumetrika.ru' });
+
+    // Добавляем парфюмы в сайтмап
+    perfumes.forEach(perfume => {
+      sitemap.write({
+        url: `/perfumes/${perfume.perfume_id}`,
+        changefreq: 'weekly',
+        priority: 0.8,
+        img: [
+          {
+            url: perfume.main_image,
+            title: perfume.name,
+          },
+        ],
+      });
+    });
+
+    sitemap.end();
+
+    const sitemapXML = await streamToPromise(sitemap);
+    res.header('Content-Type', 'application/xml');
+    res.send(sitemapXML.toString());
+  } catch (error) {
+    console.error('Ошибка генерации вложенного sitemap:', error);
+    res.status(500).send('Ошибка генерации вложенного sitemap');
+  }
+});
 
 // Пример маршрута
 app.get('/', (req, res) => {
