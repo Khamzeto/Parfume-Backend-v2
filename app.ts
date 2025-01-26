@@ -506,19 +506,14 @@ app.use(passport.initialize());
 // Настройка CORS с проверкой источника
 app.use(
   cors({
-    origin: (origin, callback) => {
-      // Разрешить запросы без источника (например, мобильные приложения или CURL)
-      if (!origin) return callback(null, true);
-
-      if (allowedOrigins.includes(origin)) {
-        callback(null, true); // Разрешить запрос, если источник в списке разрешенных
-      } else {
-        callback(new Error('Не разрешено политикой CORS')); // Отклонить запрос, если источник не в списке разрешенных
-      }
-    },
-    credentials: true, // Если необходимо поддерживать учетные данные (cookies, авторизация)
+    origin: '*', // Разрешить запросы с любого источника
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    allowedHeaders: '*', // Разрешить все заголовки
+    credentials: false, // Отключить ограничение cookies
   })
 );
+
+app.options('*', cors()); // Разрешить все предварительные OPTIONS-запросы
 
 // Middleware для обработки JSON
 app.use(express.json());
