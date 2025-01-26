@@ -111,7 +111,7 @@ app.get('/pages-sitemap.xml', async (req: Request, res: Response) => {
 // -- News sitemap -- //
 app.get('/news-sitemap.xml', async (req: Request, res: Response) => {
   try {
-    const sitemap = new SitemapStream({ hostname: 'https://hltback.parfumetrika.ru' });
+    const sitemap = new SitemapStream({ hostname: 'https://parfumetrika.ru' });
 
     // Получение списка новостей (без поля updatedAt)
     const news = await newsModel.find().select('_id coverImage title');
@@ -366,7 +366,7 @@ app.get('/notes-sitemap-:page.xml', async (req: Request, res: Response) => {
 // -- Articles sitemap -- //
 app.get('/articles-sitemap.xml', async (req: Request, res: Response) => {
   try {
-    const sitemap = new SitemapStream({ hostname: 'https://hltback.parfumetrika.ru' });
+    const sitemap = new SitemapStream({ hostname: 'https://parfumetrika.ru' });
 
     // Получение списка статей (без поля updatedAt)
     const articles = await articleModel.find().select('_id coverImage title');
