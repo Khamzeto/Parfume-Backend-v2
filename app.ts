@@ -507,7 +507,6 @@ app.use(passport.initialize());
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Разрешить запросы без источника (например, мобильные приложения или CURL)
       if (!origin) return callback(null, true);
 
       if (allowedOrigins.includes(origin)) {
@@ -516,6 +515,7 @@ app.use(
         callback(new Error('Не разрешено политикой CORS')); // Отклонить запрос, если источник не в списке разрешенных
       }
     },
+    credentials: true, // Если необходимо поддерживать учетные данные (cookies, авторизация)
   })
 );
 
