@@ -26,6 +26,7 @@ import newsModel from './src/models/newsModel';
 import articleModel from './src/models/articleModel';
 import parfumerModel from './src/models/parfumerModel';
 import noteModel from './src/models/noteModel';
+import brandModel from './src/models/brandModel';
 
 dotenv.config();
 connectDB();
@@ -70,10 +71,31 @@ app.get('/pages-sitemap.xml', async (req: Request, res: Response) => {
   try {
     const sitemap = new SitemapStream({ hostname: 'https://parfumetrika.ru' });
 
-    // Главные страницы сайта
+    // Статические страницы сайта
     sitemap.write({ url: '/', changefreq: 'daily', priority: 1.0 });
-    sitemap.write({ url: '/about', changefreq: 'monthly', priority: 0.7 });
-    sitemap.write({ url: '/contact', changefreq: 'monthly', priority: 0.7 });
+    sitemap.write({ url: '/about', changefreq: 'daily', priority: 0.7 });
+    sitemap.write({ url: '/login', changefreq: 'daily', priority: 0.7 });
+    sitemap.write({ url: '/my-articles', changefreq: 'daily', priority: 0.7 });
+    sitemap.write({ url: '/brands', changefreq: 'weekly', priority: 0.9 });
+    sitemap.write({ url: '/contacts', changefreq: 'daily', priority: 0.7 });
+    sitemap.write({ url: '/my-news', changefreq: 'daily', priority: 0.7 });
+    sitemap.write({ url: '/create-news', changefreq: 'daily', priority: 0.7 });
+    sitemap.write({ url: '/news', changefreq: 'weekly', priority: 0.9 });
+    sitemap.write({ url: '/forgot-password', changefreq: 'daily', priority: 0.7 });
+    sitemap.write({ url: '/change-profile', changefreq: 'daily', priority: 0.7 });
+    sitemap.write({ url: '/notes', changefreq: 'daily', priority: 0.7 });
+    sitemap.write({ url: '/parfumers', changefreq: 'weekly', priority: 0.9 });
+    sitemap.write({ url: '/register', changefreq: 'daily', priority: 0.7 });
+    sitemap.write({ url: '/create-article', changefreq: 'daily', priority: 0.7 });
+    sitemap.write({ url: '/profile', changefreq: 'daily', priority: 0.7 });
+    sitemap.write({ url: '/faq', changefreq: 'daily', priority: 0.7 });
+    sitemap.write({ url: '/search', changefreq: 'daily', priority: 0.7 });
+    sitemap.write({ url: '/privacy', changefreq: 'daily', priority: 0.7 });
+    sitemap.write({ url: '/stores', changefreq: 'daily', priority: 0.7 });
+    sitemap.write({ url: '/similar', changefreq: 'daily', priority: 0.7 });
+    sitemap.write({ url: '/reklama', changefreq: 'daily', priority: 0.7 });
+    sitemap.write({ url: '/articles', changefreq: 'weekly', priority: 0.9 });
+    sitemap.write({ url: '/terms', changefreq: 'daily', priority: 0.7 });
 
     sitemap.end();
 
@@ -97,16 +119,16 @@ app.get('/news-sitemap.xml', async (req: Request, res: Response) => {
     news.forEach(item => {
       sitemap.write({
         url: `/new/${item._id}`, // URL для новости
-        changefreq: 'hourly', // <-- updates every hour
+        changefreq: 'hourly', // Updates every hour
         priority: 0.9,
         img: item.coverImage
           ? [
               {
-                url: item.coverImage, // URL изображения
-                title: item.title, // Название новости как заголовок для изображения
+                url: `https://hltback.parfumetrika.ru/${item.coverImage}`, // Updated URL for the image
+                title: item.title, // Title for the image
               },
             ]
-          : undefined,
+          : undefined, // If no image, skip the field
       });
     });
 
@@ -176,6 +198,76 @@ app.get('/parfumers-sitemap-:page.xml', async (req: Request, res: Response) => {
     parfumers.forEach(parfumer => {
       sitemap.write({
         url: `/parfumer/${parfumer.slug}`,
+        changefreq: 'weekly',
+        priority: 0.7,
+      });
+    });
+
+    sitemap.end();
+
+    const sitemapXML = await streamToPromise(sitemap);
+    res.header('Content-Type', 'application/xml');
+    res.send(sitemapXML.toString());
+  } catch (error) {
+    console.error('Ошибка генерации дочернего sitemap:', error);
+    res.status(500).send('Ошибка генерации дочернего sitemap');
+  }
+});
+
+app.get('/brands-sitemap.xml', async (req: Request, res: Response) => {
+  try {
+    const sitemap = new SitemapStream({ hostname: 'https://parfumetrika.ru' });
+
+    const totalBrands = await brandModel.countDocuments(); // Общее количество брендов
+    const brandsPerPage = 5000; // Количество брендов на один дочерний сайтмап
+    const totalPages = Math.ceil(totalBrands / brandsPerPage);
+
+    // Генерация ссылок на дочерние сайтмапы
+    for (let page = 1; page <= totalPages; page++) {
+      sitemap.write({
+        url: `/brands-sitemap-${page}.xml`,
+        changefreq: 'weekly',
+        priority: 0.8,
+      });
+    }
+
+    sitemap.end();
+
+    const sitemapXML = await streamToPromise(sitemap);
+    res.header('Content-Type', 'application/xml');
+    res.send(sitemapXML.toString());
+  } catch (error) {
+    console.error('Ошибка генерации родительского sitemap:', error);
+    res.status(500).send('Ошибка генерации родительского sitemap');
+  }
+});
+
+// Brands Sitemap - Children
+app.get('/brands-sitemap-:page.xml', async (req: Request, res: Response) => {
+  try {
+    const page = parseInt(req.params.page, 10); // Номер страницы
+    const brandsPerPage = 5000; // Количество брендов на странице
+    const skip = (page - 1) * brandsPerPage;
+
+    if (page < 1) {
+      return res.status(400).json({ message: 'Номер страницы должен быть больше 0.' });
+    }
+
+    const brands = await brandModel
+      .find()
+      .select('slug original')
+      .skip(skip)
+      .limit(brandsPerPage);
+
+    if (brands.length === 0) {
+      return res.status(404).json({ message: 'Нет данных для этой страницы.' });
+    }
+
+    const sitemap = new SitemapStream({ hostname: 'https://parfumetrika.ru' });
+
+    brands.forEach(brand => {
+      sitemap.write({
+        url: `/brand/${brand.slug}`, // URL для бренда
         changefreq: 'weekly',
         priority: 0.7,
       });
@@ -282,16 +374,16 @@ app.get('/articles-sitemap.xml', async (req: Request, res: Response) => {
     articles.forEach(article => {
       sitemap.write({
         url: `/articles/${article._id}`, // URL для статьи
-        changefreq: 'hourly', // <-- updates every hour
+        changefreq: 'hourly', // Updates every hour
         priority: 0.8,
         img: article.coverImage
           ? [
               {
-                url: article.coverImage,
-                title: article.title,
+                url: `https://hltback.parfumetrika.ru/${article.coverImage}`, // Updated URL for the image
+                title: article.title, // Title for the image
               },
             ]
-          : undefined,
+          : undefined, // If no image, skip the field
       });
     });
 
