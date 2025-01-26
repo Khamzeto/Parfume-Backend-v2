@@ -1,4 +1,4 @@
-import express, { Application } from 'express';
+import express, { Application, Request, Response } from 'express';
 import connectDB from './src/config/db'; // Правильный путь к файлу подключения к базе данных
 import perfumeRoutes from './src/routes/perfumeRoutes';
 import parfumerRoutes from './src/routes/parfumerRoutes';
@@ -17,31 +17,41 @@ import cors from 'cors';
 import passportConfig from './src/config/passport'; // Конфигурация passport
 import passport from 'passport'; // Подключение passport
 import dotenv from 'dotenv';
-
 import path from 'path';
 
-const app: Application = express();
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 import { SitemapStream, streamToPromise } from 'sitemap';
-import { Request, Response } from 'express';
+
 import perfumeModel from './src/models/perfumeModel';
 import newsModel from './src/models/newsModel';
 import articleModel from './src/models/articleModel';
 import parfumerModel from './src/models/parfumerModel';
 import noteModel from './src/models/noteModel';
 
-// Добавьте этот маршрут в ваш код
+dotenv.config();
+connectDB();
+
+const app: Application = express();
+app.use(bodyParser.json());
+app.use(cors());
+app.use(passport.initialize());
+passportConfig(passport);
+
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+
+// ========== SITEMAP ROUTES ========== //
+
+// -- Master sitemap.xml -- //
 app.get('/sitemap.xml', async (req: Request, res: Response) => {
   try {
     const sitemap = new SitemapStream({ hostname: 'https://parfumetrika.ru' });
 
     // Ссылки на вложенные сайтмапы
     sitemap.write({ url: '/pages-sitemap.xml', changefreq: 'weekly', priority: 0.9 });
-    sitemap.write({ url: '/news-sitemap.xml', changefreq: 'daily', priority: 0.9 });
+    sitemap.write({ url: '/news-sitemap.xml', changefreq: 'hourly', priority: 0.9 });
     sitemap.write({ url: '/brands-sitemap.xml', changefreq: 'weekly', priority: 0.8 });
     sitemap.write({ url: '/notes-sitemap.xml', changefreq: 'weekly', priority: 0.8 });
     sitemap.write({ url: '/search-sitemap.xml', changefreq: 'weekly', priority: 0.7 });
-    sitemap.write({ url: '/articles-sitemap.xml', changefreq: 'weekly', priority: 0.8 });
+    sitemap.write({ url: '/articles-sitemap.xml', changefreq: 'hourly', priority: 0.8 });
     sitemap.write({ url: '/parfumers-sitemap.xml', changefreq: 'weekly', priority: 0.8 });
 
     sitemap.end();
@@ -55,6 +65,7 @@ app.get('/sitemap.xml', async (req: Request, res: Response) => {
   }
 });
 
+// -- Pages sitemap -- //
 app.get('/pages-sitemap.xml', async (req: Request, res: Response) => {
   try {
     const sitemap = new SitemapStream({ hostname: 'https://parfumetrika.ru' });
@@ -74,19 +85,20 @@ app.get('/pages-sitemap.xml', async (req: Request, res: Response) => {
     res.status(500).send('Ошибка генерации pages-sitemap');
   }
 });
+
+// -- News sitemap -- //
 app.get('/news-sitemap.xml', async (req: Request, res: Response) => {
   try {
     const sitemap = new SitemapStream({ hostname: 'https://parfumetrika.ru' });
 
-    // Получение списка новостей с их ID, датой обновления и обложкой
-    const news = await newsModel.find().select('_id updatedAt coverImage title');
+    // Получение списка новостей (без поля updatedAt)
+    const news = await newsModel.find().select('_id coverImage title');
 
     news.forEach(item => {
       sitemap.write({
         url: `/new/${item._id}`, // URL для новости
-        changefreq: 'daily',
+        changefreq: 'hourly', // <-- updates every hour
         priority: 0.9,
-        lastmod: item.updatedAt.toISOString(),
         img: item.coverImage
           ? [
               {
@@ -94,7 +106,7 @@ app.get('/news-sitemap.xml', async (req: Request, res: Response) => {
                 title: item.title, // Название новости как заголовок для изображения
               },
             ]
-          : undefined, // Если изображения нет, поле игнорируется
+          : undefined,
       });
     });
 
@@ -108,6 +120,8 @@ app.get('/news-sitemap.xml', async (req: Request, res: Response) => {
     res.status(500).send('Ошибка генерации news-sitemap');
   }
 });
+
+// -- Parfumers sitemap (parent) -- //
 app.get('/parfumers-sitemap.xml', async (req: Request, res: Response) => {
   try {
     const sitemap = new SitemapStream({ hostname: 'https://parfumetrika.ru' });
@@ -135,6 +149,8 @@ app.get('/parfumers-sitemap.xml', async (req: Request, res: Response) => {
     res.status(500).send('Ошибка генерации родительского sitemap');
   }
 });
+
+// -- Parfumers sitemap (children) -- //
 app.get('/parfumers-sitemap-:page.xml', async (req: Request, res: Response) => {
   try {
     const page = parseInt(req.params.page, 10); // Номер страницы
@@ -147,7 +163,7 @@ app.get('/parfumers-sitemap-:page.xml', async (req: Request, res: Response) => {
 
     const parfumers = await parfumerModel
       .find()
-      .select('slug') // Получаем только `slug`
+      .select('slug')
       .skip(skip)
       .limit(parfumersPerPage);
 
@@ -157,7 +173,6 @@ app.get('/parfumers-sitemap-:page.xml', async (req: Request, res: Response) => {
 
     const sitemap = new SitemapStream({ hostname: 'https://parfumetrika.ru' });
 
-    // Добавляем парфюмеров в сайтмап
     parfumers.forEach(parfumer => {
       sitemap.write({
         url: `/parfumer/${parfumer.slug}`,
@@ -176,6 +191,8 @@ app.get('/parfumers-sitemap-:page.xml', async (req: Request, res: Response) => {
     res.status(500).send('Ошибка генерации дочернего sitemap');
   }
 });
+
+// -- Notes sitemap (parent) -- //
 app.get('/notes-sitemap.xml', async (req: Request, res: Response) => {
   try {
     const sitemap = new SitemapStream({ hostname: 'https://parfumetrika.ru' });
@@ -204,6 +221,7 @@ app.get('/notes-sitemap.xml', async (req: Request, res: Response) => {
   }
 });
 
+// -- Notes sitemap (children) -- //
 app.get('/notes-sitemap-:page.xml', async (req: Request, res: Response) => {
   try {
     const page = parseInt(req.params.page, 10); // Номер страницы
@@ -216,7 +234,7 @@ app.get('/notes-sitemap-:page.xml', async (req: Request, res: Response) => {
 
     const notes = await noteModel
       .find()
-      .select('_id name image') // Получаем только нужные поля
+      .select('_id name image')
       .skip(skip)
       .limit(notesPerPage);
 
@@ -226,20 +244,19 @@ app.get('/notes-sitemap-:page.xml', async (req: Request, res: Response) => {
 
     const sitemap = new SitemapStream({ hostname: 'https://parfumetrika.ru' });
 
-    // Добавляем ноты в сайтмап
     notes.forEach(note => {
       sitemap.write({
-        url: `/note/${note._id}`, // URL для ноты (используется `_id`)
+        url: `/note/${note._id}`, // URL для ноты
         changefreq: 'weekly',
         priority: 0.7,
         img: note.image
           ? [
               {
-                url: note.image, // URL изображения
-                title: note.name, // Название ноты как заголовок для изображения
+                url: note.image,
+                title: note.name,
               },
             ]
-          : undefined, // Если изображения нет, игнорируем это поле
+          : undefined,
       });
     });
 
@@ -254,27 +271,27 @@ app.get('/notes-sitemap-:page.xml', async (req: Request, res: Response) => {
   }
 });
 
+// -- Articles sitemap -- //
 app.get('/articles-sitemap.xml', async (req: Request, res: Response) => {
   try {
     const sitemap = new SitemapStream({ hostname: 'https://parfumetrika.ru' });
 
-    // Получение списка статей с их ID, датой обновления и обложкой
-    const articles = await articleModel.find().select('_id updatedAt coverImage title');
+    // Получение списка статей (без поля updatedAt)
+    const articles = await articleModel.find().select('_id coverImage title');
 
     articles.forEach(article => {
       sitemap.write({
         url: `/articles/${article._id}`, // URL для статьи
-        changefreq: 'weekly',
+        changefreq: 'hourly', // <-- updates every hour
         priority: 0.8,
-        lastmod: article.updatedAt?.toISOString(),
         img: article.coverImage
           ? [
               {
-                url: article.coverImage, // URL изображения
-                title: article.title, // Название статьи как заголовок для изображения
+                url: article.coverImage,
+                title: article.title,
               },
             ]
-          : undefined, // Если изображения нет, поле игнорируется
+          : undefined,
       });
     });
 
@@ -289,6 +306,7 @@ app.get('/articles-sitemap.xml', async (req: Request, res: Response) => {
   }
 });
 
+// -- Search sitemap (parent) -- //
 app.get('/search-sitemap.xml', async (req: Request, res: Response) => {
   try {
     const sitemap = new SitemapStream({ hostname: 'https://parfumetrika.ru' });
@@ -317,6 +335,7 @@ app.get('/search-sitemap.xml', async (req: Request, res: Response) => {
   }
 });
 
+// -- Search sitemap (children) -- //
 app.get('/search-sitemap-:page.xml', async (req: Request, res: Response) => {
   try {
     const page = parseInt(req.params.page, 10); // Номер страницы
@@ -329,7 +348,7 @@ app.get('/search-sitemap-:page.xml', async (req: Request, res: Response) => {
 
     const perfumes = await perfumeModel
       .find()
-      .select('_id name perfume_id main_image brand') // Получаем только нужные поля
+      .select('_id name perfume_id main_image brand')
       .skip(skip)
       .limit(perfumesPerPage);
 
@@ -339,20 +358,19 @@ app.get('/search-sitemap-:page.xml', async (req: Request, res: Response) => {
 
     const sitemap = new SitemapStream({ hostname: 'https://parfumetrika.ru' });
 
-    // Добавляем парфюмы в сайтмап
     perfumes.forEach(perfume => {
       sitemap.write({
-        url: `/search/${perfume.perfume_id}`, // URL для парфюма
+        url: `/search/${perfume.perfume_id}`,
         changefreq: 'weekly',
         priority: 0.7,
         img: perfume.main_image
           ? [
               {
-                url: perfume.main_image, // URL главного изображения
-                title: `${perfume.brand} - ${perfume.name}`, // Название парфюма как заголовок для изображения
+                url: perfume.main_image,
+                title: `${perfume.brand} - ${perfume.name}`,
               },
             ]
-          : undefined, // Если изображения нет, игнорируем это поле
+          : undefined,
       });
     });
 
@@ -366,7 +384,6 @@ app.get('/search-sitemap-:page.xml', async (req: Request, res: Response) => {
     res.status(500).send('Ошибка генерации дочернего sitemap');
   }
 });
-
 // Пример маршрута
 app.get('/', (req, res) => {
   res.send('Сервер работает!');
