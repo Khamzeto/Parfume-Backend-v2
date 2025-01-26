@@ -152,6 +152,7 @@ export const getNewsRequestsByUserId = async (
 };
 
 // Обновление новости
+// Обновление новости
 export const updateNewsRequest = async (req: Request, res: Response): Promise<void> => {
   const { title, description, content, coverImage } = req.body;
 
@@ -163,14 +164,26 @@ export const updateNewsRequest = async (req: Request, res: Response): Promise<vo
       return;
     }
 
-    request.title = title || request.title;
-    request.description = description || request.description;
-    request.content = content || request.content;
-    request.coverImage = coverImage || request.coverImage;
+    // Если coverImage передан в Base64-формате, сохраняем как новое изображение
+    if (coverImage && coverImage.startsWith('data:image/')) {
+      request.coverImage = saveBase64Image(coverImage);
+    } else if (coverImage === null || coverImage === '') {
+      // Если при обновлении необходимо удалить/очистить изображение,
+      // здесь можно предусмотреть логику, например:
+      // request.coverImage = undefined;
+      // и удалить файл с диска при необходимости.
+    }
+
+    request.title = title ?? request.title;
+    request.description = description ?? request.description;
+    request.content = content ?? request.content;
 
     await request.save();
 
-    res.json({ message: 'Новость обновлена.' });
+    res.json({
+      message: 'Новость обновлена.',
+      news: request,
+    });
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : 'Неизвестная ошибка';
     res.status(500).json({
@@ -459,7 +472,7 @@ export const getNewsById = async (req: Request, res: Response): Promise<void> =>
     });
   }
 };
- 
+
 export const getLatestNews = async (req: Request, res: Response): Promise<void> => {
   try {
     // Получаем параметры запроса: skip
