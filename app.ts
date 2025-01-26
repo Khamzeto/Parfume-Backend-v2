@@ -496,7 +496,6 @@ const allowedOrigins = [
   'http://172.20.10.5:3001',
   'http://81.29.136.136:3000',
   'https://parfumetrika.ru',
-  'https://www.parfumetrika.ru',
   'https://hltdot.parfumetrika.ru',
 ];
 passportConfig(passport);
@@ -506,14 +505,29 @@ app.use(passport.initialize());
 // Настройка CORS с проверкой источника
 app.use(
   cors({
-    origin: '*', // Разрешить запросы с любого источника
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-    allowedHeaders: '*', // Разрешить все заголовки
-    credentials: false, // Отключить ограничение cookies
+    origin: (origin, callback) => {
+      // Разрешить запросы без источника (например, мобильные приложения, Postman, CURL)
+      if (!origin) {
+        console.log(
+          'Запрос без источника (Postman, мобильное приложение и т.д.) разрешён.'
+        );
+        return callback(null, true);
+      }
+
+      // Проверяем, включён ли источник в список разрешённых
+      if (allowedOrigins.includes(origin)) {
+        console.log(`CORS разрешён для источника: ${origin}`);
+        callback(null, true);
+      } else {
+        console.error(`CORS заблокировал запрос с источника: ${origin}`);
+        callback(new Error('Запрос отклонён политикой CORS. Источник не разрешён.'));
+      }
+    },
+    credentials: true, // Разрешить использование cookies и учетных данных
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS', // Указание разрешённых методов
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'], // Разрешённые заголовки
   })
 );
-
-app.options('*', cors()); // Разрешить все предварительные OPTIONS-запросы
 
 // Middleware для обработки JSON
 app.use(express.json());
