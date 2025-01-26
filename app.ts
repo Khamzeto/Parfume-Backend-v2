@@ -452,7 +452,7 @@ app.get('/search-sitemap-:page.xml', async (req: Request, res: Response) => {
 
     perfumes.forEach(perfume => {
       sitemap.write({
-        url: `/search/${perfume.perfume_id}`,
+        url: `/perfumes/${perfume.perfume_id}`,
         changefreq: 'weekly',
         priority: 0.7,
         img: perfume.main_image
