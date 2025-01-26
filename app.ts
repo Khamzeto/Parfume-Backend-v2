@@ -531,6 +531,9 @@ app.use(
 
 // Middleware для обработки JSON
 app.use(express.json());
+app.use('/auth/login', cors(), (req, res, next) => {
+  next();
+});
 
 // Использование маршрутов для парфюмов
 app.use('/perfumes', perfumeRoutes);
