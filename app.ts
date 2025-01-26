@@ -44,7 +44,7 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 // -- Master sitemap.xml -- //
 app.get('/sitemap.xml', async (req: Request, res: Response) => {
   try {
-    const sitemap = new SitemapStream({ hostname: 'https://parfumetrika.ru' });
+    const sitemap = new SitemapStream({ hostname: 'https://hltback.parfumetrika.ru' });
 
     // Ссылки на вложенные сайтмапы
     sitemap.write({ url: '/pages-sitemap.xml', changefreq: 'weekly', priority: 0.9 });
@@ -111,7 +111,7 @@ app.get('/pages-sitemap.xml', async (req: Request, res: Response) => {
 // -- News sitemap -- //
 app.get('/news-sitemap.xml', async (req: Request, res: Response) => {
   try {
-    const sitemap = new SitemapStream({ hostname: 'https://parfumetrika.ru' });
+    const sitemap = new SitemapStream({ hostname: 'https://hltback.parfumetrika.ru' });
 
     // Получение списка новостей (без поля updatedAt)
     const news = await newsModel.find().select('_id coverImage title');
@@ -146,7 +146,7 @@ app.get('/news-sitemap.xml', async (req: Request, res: Response) => {
 // -- Parfumers sitemap (parent) -- //
 app.get('/parfumers-sitemap.xml', async (req: Request, res: Response) => {
   try {
-    const sitemap = new SitemapStream({ hostname: 'https://parfumetrika.ru' });
+    const sitemap = new SitemapStream({ hostname: 'https://hltback.parfumetrika.ru' });
 
     const totalParfumers = await parfumerModel.countDocuments(); // Общее количество парфюмеров
     const parfumersPerPage = 5000; // Количество парфюмеров на один дочерний сайтмап
@@ -216,7 +216,7 @@ app.get('/parfumers-sitemap-:page.xml', async (req: Request, res: Response) => {
 
 app.get('/brands-sitemap.xml', async (req: Request, res: Response) => {
   try {
-    const sitemap = new SitemapStream({ hostname: 'https://parfumetrika.ru' });
+    const sitemap = new SitemapStream({ hostname: 'https://hltback.parfumetrika.ru' });
 
     const totalBrands = await brandModel.countDocuments(); // Общее количество брендов
     const brandsPerPage = 5000; // Количество брендов на один дочерний сайтмап
@@ -287,7 +287,7 @@ app.get('/brands-sitemap-:page.xml', async (req: Request, res: Response) => {
 // -- Notes sitemap (parent) -- //
 app.get('/notes-sitemap.xml', async (req: Request, res: Response) => {
   try {
-    const sitemap = new SitemapStream({ hostname: 'https://parfumetrika.ru' });
+    const sitemap = new SitemapStream({ hostname: 'https://hltback.parfumetrika.ru' });
 
     const totalNotes = await noteModel.countDocuments(); // Общее количество нот
     const notesPerPage = 5000; // Количество нот на одну страницу
@@ -366,7 +366,7 @@ app.get('/notes-sitemap-:page.xml', async (req: Request, res: Response) => {
 // -- Articles sitemap -- //
 app.get('/articles-sitemap.xml', async (req: Request, res: Response) => {
   try {
-    const sitemap = new SitemapStream({ hostname: 'https://parfumetrika.ru' });
+    const sitemap = new SitemapStream({ hostname: 'https://hltback.parfumetrika.ru' });
 
     // Получение списка статей (без поля updatedAt)
     const articles = await articleModel.find().select('_id coverImage title');
@@ -401,7 +401,7 @@ app.get('/articles-sitemap.xml', async (req: Request, res: Response) => {
 // -- Search sitemap (parent) -- //
 app.get('/search-sitemap.xml', async (req: Request, res: Response) => {
   try {
-    const sitemap = new SitemapStream({ hostname: 'https://parfumetrika.ru' });
+    const sitemap = new SitemapStream({ hostname: 'https://hltback.parfumetrika.ru' });
 
     const totalPerfumes = await perfumeModel.countDocuments(); // Общее количество парфюмов
     const perfumesPerPage = 5000; // Количество парфюмов на один дочерний сайтмап
