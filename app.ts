@@ -415,7 +415,7 @@ app.get('/articles-sitemap.xml', async (req: Request, res: Response) => {
 
     articles.forEach(article => {
       sitemap.write({
-        url: `/articles/${article._id}`,
+        url: `/article/${article._id}`,
         changefreq: 'hourly',
         priority: 0.8,
         img: article.coverImage
