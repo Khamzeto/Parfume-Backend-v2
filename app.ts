@@ -12,6 +12,7 @@ import mainImageRoutes from './src/routes/mainImageRoutes';
 import articleRoutes from './src/routes/articleRoutes';
 import newsRoutes from './src/routes/newsRoutes';
 import shopRoutes from './src/routes/shopRoutes';
+const multer = require('multer');
 
 import bodyParser from 'body-parser';
 import cors from 'cors';
@@ -41,6 +42,41 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 // Настраиваем body-parser
 app.use(bodyParser.json({ limit: '10mb' }));
 app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }));
+const uploadPath = '/var/www/www-root/data/www/parfumetrika.ru/note_images';
+
+// Настройка Multer
+const storage = multer.diskStorage({
+  destination: (req: any, file: any, cb: any) => {
+    cb(null, uploadPath); // Укажите путь для сохранения файлов
+  },
+  filename: (req: any, file: any, cb: any) => {
+    // Используем имя файла из запроса или стандартное имя
+    const customFileName = req.body.filename || file.originalname;
+    cb(null, customFileName + path.extname(file.originalname));
+  },
+});
+
+const upload = multer({ storage });
+
+// Middleware для обработки JSON и формы
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Роут для загрузки фото
+app.post('/upload_notes', upload.single('photo'), (req: Request, res: Response) => {
+  try {
+    const file = (req as any).file; // Cast `req` to `any` to access `file`
+    res.status(200).json({
+      message: 'Файл успешно загружен',
+      file: file, // Use the `file` variable
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      message: 'Ошибка при загрузке файла',
+      error: error.message,
+    });
+  }
+});
 
 // Инициализируем Passport
 passportConfig(passport);
