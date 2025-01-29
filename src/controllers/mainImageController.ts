@@ -61,32 +61,30 @@ export const approveMainImageRequest = async (
     const request = await MainImageRequest.findById(req.params.id);
     if (!request) {
       res.status(404).json({ message: 'Заявка не найдена.' });
-      return; // Return after sending response
+      return;
     }
 
     // Проверка формата base64
     const matches = request.image.match(/^data:image\/([a-zA-Z0-9]+);base64,([^\"]+)$/);
     if (!matches || matches.length < 3) {
       res.status(400).json({ message: 'Неверный формат изображения (base64).' });
-      return; // Return after sending response
+      return;
     }
 
     const imageBuffer = Buffer.from(matches[2], 'base64');
 
+    // Проверка на пустое изображение
+    if (imageBuffer.length === 0) {
+      res.status(400).json({ message: 'Изображение пустое после декодирования base64.' });
+      return;
+    }
+
     // Генерация уникального имени файла
     const filename = `${Date.now()}.jpg`;
-
-    // Путь для сохранения изображения
     const imagePath = path.join(
       '/var/www/www-root/data/www/parfumetrika.ru/images',
       filename
     );
-
-    // Проверка на пустое изображение
-    if (imageBuffer.length === 0) {
-      res.status(400).json({ message: 'Изображение пустое после декодирования base64.' });
-      return; // Return after sending response
-    }
 
     // Сохранение изображения
     fs.writeFileSync(imagePath, imageBuffer);
@@ -95,7 +93,12 @@ export const approveMainImageRequest = async (
     const perfume = await Perfume.findById(request.perfumeId);
     if (!perfume) {
       res.status(404).json({ message: 'Парфюм не найден.' });
-      return; // Return after sending response
+      return;
+    }
+
+    // Проверка на некорректное значение similar_perfumes
+    if (typeof perfume.similar_perfumes === 'string') {
+      perfume.similar_perfumes = [];
     }
 
     perfume.main_image = `images/${filename}`;
