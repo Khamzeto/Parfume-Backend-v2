@@ -152,7 +152,7 @@ export const getAllMainImageRequests = async (
   res: Response
 ): Promise<void> => {
   try {
-    const { page = 1, limit = 10 } = req.query;
+    const { page = 1, limit = 100 } = req.query;
 
     const pageNumber = Number(page);
     const limitNumber = Number(limit);
