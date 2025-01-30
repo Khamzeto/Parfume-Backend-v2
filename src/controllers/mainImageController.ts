@@ -65,7 +65,9 @@ export const approveMainImageRequest = async (
     }
 
     // Проверка формата base64
-    const matches = request.image.match(/^data:image\/([a-zA-Z0-9]+);base64,([^\"]+)$/);
+    const base64Pattern = /^data:image\/([a-zA-Z0-9]+);base64,([^\"]+)$/;
+    const matches = request.image.match(base64Pattern);
+
     if (!matches || matches.length < 3) {
       res.status(400).json({ message: 'Неверный формат изображения (base64).' });
       return;
@@ -96,11 +98,17 @@ export const approveMainImageRequest = async (
       return;
     }
 
-    // Проверка на некорректное значение similar_perfumes
-    if (typeof perfume.similar_perfumes === 'string') {
+    // Проверка и исправление similar_perfumes
+    if (!Array.isArray(perfume.similar_perfumes)) {
       perfume.similar_perfumes = [];
+    } else {
+      // Фильтруем, оставляя только корректные объекты
+      perfume.similar_perfumes = perfume.similar_perfumes.filter(
+        sp => sp && typeof sp === 'object' && sp.perfume_id
+      );
     }
 
+    // Обновление главного изображения
     perfume.main_image = `images/${filename}`;
     await perfume.save();
 
