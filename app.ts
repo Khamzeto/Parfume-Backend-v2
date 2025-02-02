@@ -446,8 +446,10 @@ app.get('/articles-sitemap.xml', async (req: Request, res: Response) => {
   try {
     const sitemap = new SitemapStream({ hostname: 'https://parfumetrika.ru' });
 
-    // Получение списка статей (без поля updatedAt)
-    const articles = await articleModel.find().select('_id coverImage title');
+    // Получение только одобренных статей (status: 'approved')
+    const articles = await articleModel
+      .find({ status: 'approved' })
+      .select('_id coverImage title');
 
     articles.forEach(article => {
       sitemap.write({
