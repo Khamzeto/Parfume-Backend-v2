@@ -52,27 +52,24 @@ const storage = multer.diskStorage({
   filename: (req: any, file: any, cb: any) => {
     console.log('req.body перед обработкой:', req.body); // Проверка
 
-    // Проверяем, передан ли кастомный filename
     let customFileName = req.body.filename || file.originalname;
 
-    // Убираем расширение, если оно уже есть в `filename`
+    // Убираем расширение из переданного filename (если есть)
     customFileName = customFileName.replace(/\.[^/.]+$/, '');
 
-    // Берём расширение из загружаемого файла
+    // Получаем расширение из оригинального файла
     const fileExtension = path.extname(file.originalname);
 
-    // Формируем новое имя файла
-    cb(null, `${customFileName}${fileExtension}`);
+    // Создаём итоговое имя файла
+    const finalFileName = `${customFileName}${fileExtension}`;
+
+    console.log('Файл будет сохранён как:', finalFileName);
+
+    cb(null, finalFileName);
   },
 });
 
-// Используем `fields`, чтобы можно было передавать и файл, и текстовые поля
-const upload = multer({ storage }).fields([
-  { name: 'photo', maxCount: 1 }, // Файл
-  { name: 'filename', maxCount: 1 }, // Кастомное имя файла
-]);
-
-// **ВНИМАНИЕ:** Не используем `express.json()` перед этим маршрутом
+const upload = multer({ storage });
 
 // POST-запрос для загрузки файла
 app.post('/upload_notes', (req: Request, res: Response) => {
