@@ -73,22 +73,6 @@ const storage = multer.diskStorage({
 const upload = multer({ storage }).single('photo');
 
 // POST-запрос для загрузки файла
-app.post('/upload_notes', upload, (req: Request, res: Response) => {
-  const file = (req as any).file; // Получаем файл
-  console.log('req.body после обработки:', req.body); // Проверка
-
-  if (!file) {
-    return res.status(400).json({ message: 'Файл не был загружен' });
-  }
-
-  res.status(200).json({
-    message: 'Файл успешно загружен',
-    file: {
-      filename: file.filename, // Итоговое имя файла
-      path: `/note_images/${file.filename}`, // Путь для клиента
-    },
-  });
-});
 
 // Инициализируем Passport
 passportConfig(passport);
@@ -581,6 +565,22 @@ app.use('/gallery', galleryRoutes);
 app.use('/article', articleRoutes);
 app.use('/news', newsRoutes);
 app.use('/main-image', mainImageRoutes);
+app.post('/upload_notes', upload, (req: Request, res: Response) => {
+  const file = (req as any).file; // Получаем файл
+  console.log('req.body после обработки:', req.body); // Проверка
+
+  if (!file) {
+    return res.status(400).json({ message: 'Файл не был загружен' });
+  }
+
+  res.status(200).json({
+    message: 'Файл успешно загружен',
+    file: {
+      filename: file.filename, // Итоговое имя файла
+      path: `/note_images/${file.filename}`, // Путь для клиента
+    },
+  });
+});
 
 // Запуск сервера
 const PORT = 3001;
