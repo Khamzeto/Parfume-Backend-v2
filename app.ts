@@ -47,23 +47,22 @@ const uploadPath = '/var/www/www-root/data/www/parfumetrika.ru/note_images';
 // Настройка Multer
 const storage = multer.diskStorage({
   destination: (req: any, file: any, cb: any) => {
-    cb(null, uploadPath); // Сохраняем файлы в указанной папке
+    cb(null, uploadPath);
   },
   filename: (req: any, file: any, cb: any) => {
-    console.log('req.body перед обработкой:', req.body); // Проверка
-
     let customFileName = req.body.filename || file.originalname;
 
-    // Убираем расширение из переданного filename (если есть)
-    customFileName = customFileName.replace(/\.[^/.]+$/, '');
+    // Принудительно конвертируем имя в UTF-8 (важно для Windows/Docker)
+    customFileName = Buffer.from(customFileName, 'latin1').toString('utf8');
 
-    // Получаем расширение из оригинального файла
+    // Убираем расширение (если есть)
+    customFileName = customFileName.replace(/\.[^/.]+$/, '');
     const fileExtension = path.extname(file.originalname);
 
-    // Создаём итоговое имя файла
+    // Итоговое имя файла
     const finalFileName = `${customFileName}${fileExtension}`;
 
-    console.log('Файл будет сохранён как:', finalFileName);
+    console.log('Файл будет сохранён как:', finalFileName); // Проверка
 
     cb(null, finalFileName);
   },
@@ -565,20 +564,29 @@ app.use('/gallery', galleryRoutes);
 app.use('/article', articleRoutes);
 app.use('/news', newsRoutes);
 app.use('/main-image', mainImageRoutes);
-app.post('/upload_notes', upload, (req: Request, res: Response) => {
-  const file = (req as any).file; // Получаем файл
-  console.log('req.body после обработки:', req.body); // Проверка
+app.post('/upload_notes', (req: Request, res: Response) => {
+  upload(req, res, (err: any) => {
+    if (err) {
+      return res
+        .status(500)
+        .json({ message: 'Ошибка загрузки файла', error: err.message });
+    }
 
-  if (!file) {
-    return res.status(400).json({ message: 'Файл не был загружен' });
-  }
+    const file = (req as any).file; // Получаем файл
+    console.log('req.body после обработки:', req.body); // Логируем тело запроса
+    console.log('Получен файл:', file.originalname); // Проверяем оригинальное имя файла
 
-  res.status(200).json({
-    message: 'Файл успешно загружен',
-    file: {
-      filename: file.filename, // Итоговое имя файла
-      path: `/note_images/${file.filename}`, // Путь для клиента
-    },
+    if (!file) {
+      return res.status(400).json({ message: 'Файл не был загружен' });
+    }
+
+    res.status(200).json({
+      message: 'Файл успешно загружен',
+      file: {
+        filename: file.filename, // Итоговое имя файла
+        path: `/note_images/${encodeURIComponent(file.filename)}`, // Кодируем URL
+      },
+    });
   });
 });
 
