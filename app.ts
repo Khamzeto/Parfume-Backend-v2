@@ -47,28 +47,30 @@ const uploadPath = '/var/www/www-root/data/www/parfumetrika.ru/note_images';
 // Настройка Multer
 const storage = multer.diskStorage({
   destination: (req: any, file: any, cb: any) => {
-    cb(null, uploadPath); // Укажите путь для сохранения файлов
+    cb(null, uploadPath);
   },
   filename: (req: any, file: any, cb: any) => {
-    // Используем имя файла из запроса или стандартное имя
-    const customFileName = req.body.filename || file.originalname;
-    cb(null, customFileName + path.extname(file.originalname));
+    let customFileName = req.body.filename || file.originalname;
+    customFileName = customFileName.replace(/\.[^/.]+$/, ''); // Удаляем существующее расширение
+    const fileExtension = path.extname(file.originalname);
+    cb(null, `${customFileName}${fileExtension}`);
   },
 });
 
 const upload = multer({ storage });
 
-// Middleware для обработки JSON и формы
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Роут для загрузки фото
 app.post('/upload_notes', upload.single('photo'), (req: Request, res: Response) => {
   try {
-    const file = (req as any).file; // Cast `req` to `any` to access `file`
+    const file = (req as any).file;
     res.status(200).json({
       message: 'Файл успешно загружен',
-      file: file, // Use the `file` variable
+      file: {
+        filename: file.filename,
+        path: `/note_images/${file.filename}`, // Используем относительный путь для доступа к файлу
+      },
     });
   } catch (error: any) {
     res.status(500).json({
