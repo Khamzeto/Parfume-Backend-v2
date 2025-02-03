@@ -47,58 +47,57 @@ const uploadPath = '/var/www/www-root/data/www/parfumetrika.ru/note_images';
 // Настройка Multer
 const storage = multer.diskStorage({
   destination: (req: any, file: any, cb: any) => {
-    cb(null, uploadPath); // Сохраняем файлы в указанной директории
+    cb(null, uploadPath); // Сохраняем файлы в указанной папке
   },
   filename: (req: any, file: any, cb: any) => {
-    try {
-      // Для отладки можно добавить вывод содержимого req.body:
-      console.log('req.body:', req.body);
+    console.log('req.body перед обработкой:', req.body); // Проверка
 
-      // Используем переданное имя файла или оригинальное имя
-      let customFileName: string = req.body.filename || file.originalname;
-      // Удаляем расширение, если оно уже присутствует в customFileName
-      customFileName = customFileName.replace(/\.[^/.]+$/, '');
-      // Получаем расширение из оригинального имени файла
-      const fileExtension = path.extname(file.originalname);
-      // Формируем итоговое имя файла с использованием шаблонной строки
-      cb(null, `${customFileName}${fileExtension}`);
-    } catch (err) {
-      cb(err as Error, '');
-    }
+    // Проверяем, передан ли кастомный filename
+    let customFileName = req.body.filename || file.originalname;
+
+    // Убираем расширение, если оно уже есть в `filename`
+    customFileName = customFileName.replace(/\.[^/.]+$/, '');
+
+    // Берём расширение из загружаемого файла
+    const fileExtension = path.extname(file.originalname);
+
+    // Формируем новое имя файла
+    cb(null, `${customFileName}${fileExtension}`);
   },
 });
 
-// Initialize Multer
-const upload = multer({ storage });
+// Используем `fields`, чтобы можно было передавать и файл, и текстовые поля
+const upload = multer({ storage }).fields([
+  { name: 'photo', maxCount: 1 }, // Файл
+  { name: 'filename', maxCount: 1 }, // Кастомное имя файла
+]);
 
-// Middleware for JSON and URL-encoded form parsing
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// **ВНИМАНИЕ:** Не используем `express.json()` перед этим маршрутом
 
-// POST endpoint for file uploads
-app.post('/upload_notes', upload.single('photo'), (req: Request, res: Response) => {
-  try {
-    const file = (req as any).file;
+// POST-запрос для загрузки файла
+app.post('/upload_notes', (req: Request, res: Response) => {
+  upload(req, res, (err: Error | null) => {
+    if (err) {
+      return res
+        .status(500)
+        .json({ message: 'Ошибка при загрузке файла', error: err.message });
+    }
+
+    const file = (req as any).files?.photo?.[0]; // Получаем файл
+    console.log('req.body после обработки:', req.body); // Проверка
 
     if (!file) {
-      return res.status(400).json({
-        message: 'Файл не был загружен',
-      });
+      return res.status(400).json({ message: 'Файл не был загружен' });
     }
 
     res.status(200).json({
       message: 'Файл успешно загружен',
       file: {
-        filename: file.filename, // Сохранённое имя файла
-        path: `/note_images/${file.filename}`, // Относительный путь для клиента
+        filename: file.filename, // Итоговое имя файла
+        path: `/note_images/${file.filename}`, // Путь для клиента
       },
     });
-  } catch (error: any) {
-    res.status(500).json({
-      message: 'Ошибка при загрузке файла',
-      error: error.message,
-    });
-  }
+  });
 });
 
 // Инициализируем Passport
