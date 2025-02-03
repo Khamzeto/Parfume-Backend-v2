@@ -47,32 +47,56 @@ const uploadPath = '/var/www/www-root/data/www/parfumetrika.ru/note_images';
 // Настройка Multer
 const storage = multer.diskStorage({
   destination: (req: any, file: any, cb: any) => {
-    cb(null, uploadPath);
+    cb(null, uploadPath); // Save files in the specified directory
   },
   filename: (req: any, file: any, cb: any) => {
-    let customFileName = req.body.filename || file.originalname;
-    customFileName = customFileName.replace(/\.[^/.]+$/, ''); // Удаляем существующее расширение
-    const fileExtension = path.extname(file.originalname);
-    cb(null, `${customFileName}${fileExtension}`);
+    try {
+      // Use filename from the request or fallback to the original filename
+      let customFileName = req.body.filename || file.originalname;
+
+      // Remove existing extension (if present) from the custom filename
+      customFileName = customFileName.replace(/\.[^/.]+$/, '');
+
+      // Get the file extension from the original file
+      const fileExtension = path.extname(file.originalname);
+
+      // Final file name: custom name + original extension
+      cb(null, `${customFileName}${fileExtension}`);
+    } catch (err) {
+      cb(err as Error, ''); // Pass error to multer if something goes wrong
+    }
   },
 });
 
+// Initialize Multer
 const upload = multer({ storage });
 
+// Middleware for JSON and URL-encoded form parsing
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// POST endpoint for file uploads
 app.post('/upload_notes', upload.single('photo'), (req: Request, res: Response) => {
   try {
     const file = (req as any).file;
+
+    // Check if file exists
+    if (!file) {
+      return res.status(400).json({
+        message: 'Файл не был загружен',
+      });
+    }
+
+    // Respond with file details
     res.status(200).json({
       message: 'Файл успешно загружен',
       file: {
-        filename: file.filename,
-        path: `/note_images/${file.filename}`, // Используем относительный путь для доступа к файлу
+        filename: file.filename, // The saved file name
+        path: `/note_images/${file.filename}`, // Relative path for the client
       },
     });
   } catch (error: any) {
+    // Handle errors
     res.status(500).json({
       message: 'Ошибка при загрузке файла',
       error: error.message,
