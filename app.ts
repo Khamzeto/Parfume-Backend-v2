@@ -119,7 +119,7 @@ app.get('/', (req: Request, res: Response) => {
 // -- Master sitemap.xml -- //
 app.get('/sitemap.xml', async (req: Request, res: Response) => {
   try {
-    const sitemap = new SitemapStream({ hostname: 'https://hltback.parfumetrika.ru' });
+    const sitemap = new SitemapStream({ hostname: 'https://parfumetrika.ru' });
 
     // Ссылки на вложенные сайтмапы:
     sitemap.write({ url: '/pages-sitemap.xml', changefreq: 'weekly', priority: 0.9 });
@@ -199,7 +199,7 @@ app.get('/news-sitemap.xml', async (req: Request, res: Response) => {
         img: item.coverImage
           ? [
               {
-                url: `https://hltback.parfumetrika.ru/${item.coverImage}`, // Картинка
+                url: `https://parfumetrika.ru/${item.coverImage}`, // Картинка
                 title: item.title,
               },
             ]
@@ -221,7 +221,7 @@ app.get('/news-sitemap.xml', async (req: Request, res: Response) => {
 // -- Parfumers sitemap (parent) -- //
 app.get('/parfumers-sitemap.xml', async (req: Request, res: Response) => {
   try {
-    const sitemap = new SitemapStream({ hostname: 'https://hltback.parfumetrika.ru' });
+    const sitemap = new SitemapStream({ hostname: 'https://parfumetrika.ru' });
 
     const totalParfumers = await parfumerModel.countDocuments();
     const parfumersPerPage = 5000;
@@ -291,7 +291,7 @@ app.get('/parfumers-sitemap-:page.xml', async (req: Request, res: Response) => {
 // -- Brands sitemap (parent) -- //
 app.get('/brands-sitemap.xml', async (req: Request, res: Response) => {
   try {
-    const sitemap = new SitemapStream({ hostname: 'https://hltback.parfumetrika.ru' });
+    const sitemap = new SitemapStream({ hostname: 'https://parfumetrika.ru' });
 
     const totalBrands = await brandModel.countDocuments();
     const brandsPerPage = 5000;
@@ -361,7 +361,7 @@ app.get('/brands-sitemap-:page.xml', async (req: Request, res: Response) => {
 // -- Notes sitemap (parent) -- //
 app.get('/notes-sitemap.xml', async (req: Request, res: Response) => {
   try {
-    const sitemap = new SitemapStream({ hostname: 'https://hltback.parfumetrika.ru' });
+    const sitemap = new SitemapStream({ hostname: 'https://parfumetrika.ru' });
 
     const totalNotes = await noteModel.countDocuments();
     const notesPerPage = 5000;
@@ -454,7 +454,7 @@ app.get('/articles-sitemap.xml', async (req: Request, res: Response) => {
         img: article.coverImage
           ? [
               {
-                url: `https://hltback.parfumetrika.ru/${article.coverImage}`,
+                url: `https://parfumetrika.ru/${article.coverImage}`,
                 title: article.title,
               },
             ]
@@ -476,7 +476,7 @@ app.get('/articles-sitemap.xml', async (req: Request, res: Response) => {
 // -- Search sitemap (parent) -- //
 app.get('/search-sitemap.xml', async (req: Request, res: Response) => {
   try {
-    const sitemap = new SitemapStream({ hostname: 'https://hltback.parfumetrika.ru' });
+    const sitemap = new SitemapStream({ hostname: 'https://parfumetrika.ru' });
 
     const totalPerfumes = await perfumeModel.countDocuments();
     const perfumesPerPage = 5000;
