@@ -1,4 +1,3 @@
-// /src/routes/perfumeRoutes.ts
 import express from 'express';
 import {
   getPerfumeById,
@@ -9,17 +8,49 @@ import {
   searchPerfumes,
   translateAndUpdateAllFields,
   searchBrands,
+  uploadGalleryImages,
+  getGalleryImages,
+  getPerfumesByIds,
+  getPerfumesWithSimilarAndSearch,
+  getRecentPerfumes,
+  addReview,
+  addCategoryRatings,
+  getRecentReviews,
+  getAllReviews,
+  deleteReview,
+  getAllPerfumeNames, // Импортируем функцию для добавления отзыва
 } from '../controllers/perfumeController';
 
 const router = express.Router();
+
+// Define specific routes first
+router.get('/search', searchPerfumes); // Search perfumes
+router.get('/searchBrands', searchBrands); // Search brands
+router.get('/similar', getPerfumesWithSimilarAndSearch); // Get perfumes with similar perfumes
+router.get('/recent', getRecentPerfumes);
+
+// Route for uploading gallery images
+router.post('/gallery/:perfumeId', uploadGalleryImages);
+router.get('/gallery/:perfumeId', getGalleryImages); // Get gallery images
+router.post('/perfumes/:perfume_id/rating', addCategoryRatings);
+// Route to retrieve perfumes by multiple IDs
+router.post('/by-ids', getPerfumesByIds);
+router.get('/names', getAllPerfumeNames);
+// Route for translating and updating all fields
 router.put('/translate-all', translateAndUpdateAllFields);
 
-router.get('/', getAllPerfumes);
-router.get('/search', searchPerfumes);
-router.get('/searchBrands', searchBrands);
-router.get('/:perfume_id', getPerfumeById);
-router.post('/', createPerfume);
-router.put('/:id', updatePerfume);
-router.delete('/:id', deletePerfume);
+// General routes for all perfumes
+router.get('/', getAllPerfumes); // Get all perfumes
+router.post('/', createPerfume); // Create new perfume
 
+// Route for adding a review
+router.post('/:perfume_id/reviews', addReview); // Добавляем маршрут для добавления отзыва
+
+// Generic routes last (to prevent conflicts)
+router.get('/:perfume_id', getPerfumeById); // Get perfume by ID
+router.put('/:id', updatePerfume); // Update perfume by ID
+router.delete('/:id', deletePerfume); // Delete perfume by ID
+router.get('/reviews/recent', getRecentReviews);
+router.get('/reviews/all', getAllReviews);
+router.delete('/delete/:perfume_id/reviews/:reviewId', deleteReview);
 export default router;
